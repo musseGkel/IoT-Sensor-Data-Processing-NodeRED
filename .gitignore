@@ -1,0 +1,27 @@
+# Node.js dependencies
+node_modules/
+
+# macOS hidden files
+.DS_Store
+
+# npm debug log
+npm-debug.log
+
+# Local Node-RED settings
+node-red/node_modules/
+node-red/node_modules/*
+node-red/.config.json
+node-red/.config.json.*
+node-red/.node-red
+
+# IDE specific files
+.vscode/
+.idea/
+
+# OS generated files
+Thumbs.db
+*.swp
+*.swo
+*.lock
+.DS_Store
+.DS_Store?
