@@ -1,0 +1,99 @@
+[
+  {
+      "id": "ca49d97b508754c7",
+      "type": "tab",
+      "label": "IoT-Sensor-Data-Processing-NodeRED",
+      "disabled": false,
+      "info": "",
+      "env": []
+  },
+  {
+      "id": "47aa01e907a599ea",
+      "type": "mqtt in",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "topic": "team/sensors",
+      "qos": "0",
+      "datatype": "auto-detect",
+      "broker": "37464be6e8cb6157",
+      "nl": false,
+      "rap": true,
+      "rh": 0,
+      "inputs": 0,
+      "x": 90,
+      "y": 220,
+      "wires": [
+          [
+              "51f74d22d63a78e1"
+          ]
+      ]
+  },
+  {
+      "id": "51f74d22d63a78e1",
+      "type": "function",
+      "z": "ca49d97b508754c7",
+      "name": "Cold Path",
+      "func": "var sensorData = msg.payload; // Ensure msg.payload is JSON parsed object\n\n// Initialize context.headersWritten if it doesn't exist\ncontext.headersWritten = context.headersWritten || {};\n\nswitch(sensorData.sensor_type) {\n    case 'position':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv';\n        if (!context.headersWritten.gps) {\n            msg.payload = `timestamp,sensor_id,latitude,longitude,altitude\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.latitude},${sensorData.data.longitude},${sensorData.data.altitude}`;\n            context.headersWritten.gps = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.latitude},${sensorData.data.longitude},${sensorData.data.altitude}`;\n        }\n        break;\n    case 'acceleration':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv';\n        if (!context.headersWritten.acceleration) {\n            msg.payload = `timestamp,sensor_id,x,y,z\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n            context.headersWritten.acceleration = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n        }\n        break;\n    case 'speed':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv';\n        if (!context.headersWritten.speed) {\n            msg.payload = `timestamp,sensor_id,speed\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.speed}`;\n            context.headersWritten.speed = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.speed}`;\n        }\n        break;\n    case 'vital_parameters':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv';\n        if (!context.headersWritten.vital_parameters) {\n            msg.payload = `timestamp,sensor_id,heart_rate,body_temperature\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n            context.headersWritten.vital_parameters = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n        }\n        break;\n    default:\n        return null; // Ignore unknown sensor types\n}\n\nreturn msg;\n",
+      "outputs": 1,
+      "timeout": 0,
+      "noerr": 0,
+      "initialize": "",
+      "finalize": "",
+      "libs": [],
+      "x": 300,
+      "y": 220,
+      "wires": [
+          [
+              "af225e0dcccf5096"
+          ]
+      ]
+  },
+  {
+      "id": "af225e0dcccf5096",
+      "type": "file",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "filename": "filename",
+      "filenameType": "msg",
+      "appendNewline": true,
+      "createDir": false,
+      "overwriteFile": "false",
+      "encoding": "utf8",
+      "x": 560,
+      "y": 220,
+      "wires": [
+          []
+      ]
+  },
+  {
+      "id": "37464be6e8cb6157",
+      "type": "mqtt-broker",
+      "name": "",
+      "broker": "localhost",
+      "port": "1883",
+      "clientid": "",
+      "autoConnect": true,
+      "usetls": false,
+      "protocolVersion": "4",
+      "keepalive": "60",
+      "cleansession": true,
+      "autoUnsubscribe": true,
+      "birthTopic": "",
+      "birthQos": "0",
+      "birthRetain": "false",
+      "birthPayload": "",
+      "birthMsg": {},
+      "closeTopic": "",
+      "closeQos": "0",
+      "closeRetain": "false",
+      "closePayload": "",
+      "closeMsg": {},
+      "willTopic": "",
+      "willQos": "0",
+      "willRetain": "false",
+      "willPayload": "",
+      "willMsg": {},
+      "userProps": "",
+      "sessionExpiry": ""
+  }
+]
