@@ -66,6 +66,270 @@
       ]
   },
   {
+      "id": "9af9a580c406e70f",
+      "type": "file in",
+      "z": "ca49d97b508754c7",
+      "name": "read acceleration",
+      "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv",
+      "filenameType": "str",
+      "format": "lines",
+      "chunk": false,
+      "sendError": false,
+      "encoding": "utf8",
+      "allProps": false,
+      "x": 1050,
+      "y": 80,
+      "wires": [
+          [
+              "bcfed126d10a792b"
+          ]
+      ]
+  },
+  {
+      "id": "bcfed126d10a792b",
+      "type": "debug",
+      "z": "ca49d97b508754c7",
+      "name": "debug 2",
+      "active": true,
+      "tosidebar": true,
+      "console": false,
+      "tostatus": false,
+      "complete": "true",
+      "targetType": "full",
+      "statusVal": "",
+      "statusType": "auto",
+      "x": 1350,
+      "y": 80,
+      "wires": []
+  },
+  {
+      "id": "1c6e1cbd72b836f2",
+      "type": "file in",
+      "z": "ca49d97b508754c7",
+      "name": "read speed",
+      "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv",
+      "filenameType": "str",
+      "format": "utf8",
+      "chunk": false,
+      "sendError": false,
+      "encoding": "utf8",
+      "allProps": false,
+      "x": 1030,
+      "y": 220,
+      "wires": [
+          [
+              "b8a763e2b1498fe8"
+          ]
+      ]
+  },
+  {
+      "id": "b8a763e2b1498fe8",
+      "type": "debug",
+      "z": "ca49d97b508754c7",
+      "name": "debug 3",
+      "active": true,
+      "tosidebar": true,
+      "console": false,
+      "tostatus": false,
+      "complete": "payload",
+      "targetType": "msg",
+      "statusVal": "",
+      "statusType": "auto",
+      "x": 1280,
+      "y": 220,
+      "wires": []
+  },
+  {
+      "id": "f42c9c74c332be4c",
+      "type": "inject",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "props": [
+          {
+              "p": "payload"
+          },
+          {
+              "p": "topic",
+              "vt": "str"
+          }
+      ],
+      "repeat": "",
+      "crontab": "",
+      "once": false,
+      "onceDelay": 0.1,
+      "topic": "",
+      "payload": "",
+      "payloadType": "date",
+      "x": 790,
+      "y": 220,
+      "wires": [
+          [
+              "1c6e1cbd72b836f2"
+          ]
+      ]
+  },
+  {
+      "id": "06ef1183c42cf596",
+      "type": "file in",
+      "z": "ca49d97b508754c7",
+      "name": "read GPS",
+      "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv",
+      "filenameType": "str",
+      "format": "lines",
+      "chunk": false,
+      "sendError": false,
+      "encoding": "utf8",
+      "allProps": false,
+      "x": 1020,
+      "y": 300,
+      "wires": [
+          [
+              "bc13eb1b6ef31889"
+          ]
+      ]
+  },
+  {
+      "id": "b5948bfad23ec8bc",
+      "type": "file in",
+      "z": "ca49d97b508754c7",
+      "name": "read vital data",
+      "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv",
+      "filenameType": "str",
+      "format": "lines",
+      "chunk": false,
+      "sendError": false,
+      "encoding": "utf8",
+      "allProps": false,
+      "x": 1060,
+      "y": 400,
+      "wires": [
+          [
+              "7b273d511b51760d"
+          ]
+      ]
+  },
+  {
+      "id": "cb4c6bc77392d309",
+      "type": "inject",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "props": [
+          {
+              "p": "payload"
+          },
+          {
+              "p": "topic",
+              "vt": "str"
+          }
+      ],
+      "repeat": "",
+      "crontab": "",
+      "once": false,
+      "onceDelay": 0.1,
+      "topic": "",
+      "payload": "",
+      "payloadType": "date",
+      "x": 790,
+      "y": 80,
+      "wires": [
+          [
+              "9af9a580c406e70f"
+          ]
+      ]
+  },
+  {
+      "id": "79f85fc2417a2000",
+      "type": "inject",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "props": [
+          {
+              "p": "payload"
+          },
+          {
+              "p": "topic",
+              "vt": "str"
+          }
+      ],
+      "repeat": "",
+      "crontab": "",
+      "once": false,
+      "onceDelay": 0.1,
+      "topic": "",
+      "payload": "",
+      "payloadType": "date",
+      "x": 790,
+      "y": 300,
+      "wires": [
+          [
+              "06ef1183c42cf596"
+          ]
+      ]
+  },
+  {
+      "id": "57f253d9989d06ae",
+      "type": "inject",
+      "z": "ca49d97b508754c7",
+      "name": "",
+      "props": [
+          {
+              "p": "payload"
+          },
+          {
+              "p": "topic",
+              "vt": "str"
+          }
+      ],
+      "repeat": "",
+      "crontab": "",
+      "once": false,
+      "onceDelay": 0.1,
+      "topic": "",
+      "payload": "",
+      "payloadType": "date",
+      "x": 790,
+      "y": 400,
+      "wires": [
+          [
+              "b5948bfad23ec8bc"
+          ]
+      ]
+  },
+  {
+      "id": "bc13eb1b6ef31889",
+      "type": "debug",
+      "z": "ca49d97b508754c7",
+      "name": "debug 4",
+      "active": true,
+      "tosidebar": true,
+      "console": false,
+      "tostatus": false,
+      "complete": "payload",
+      "targetType": "msg",
+      "statusVal": "",
+      "statusType": "auto",
+      "x": 1260,
+      "y": 300,
+      "wires": []
+  },
+  {
+      "id": "7b273d511b51760d",
+      "type": "debug",
+      "z": "ca49d97b508754c7",
+      "name": "debug 5",
+      "active": true,
+      "tosidebar": true,
+      "console": false,
+      "tostatus": false,
+      "complete": "payload",
+      "targetType": "msg",
+      "statusVal": "",
+      "statusType": "auto",
+      "x": 1340,
+      "y": 400,
+      "wires": []
+  },
+  {
       "id": "37464be6e8cb6157",
       "type": "mqtt-broker",
       "name": "",
