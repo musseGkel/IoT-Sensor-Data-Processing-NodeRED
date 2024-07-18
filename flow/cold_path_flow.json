@@ -1,0 +1,1165 @@
+[
+    {
+        "id": "ca49d97b508754c7",
+        "type": "tab",
+        "label": "IoT-Sensor-Data-Processing-NodeRED",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "47aa01e907a599ea",
+        "type": "mqtt in",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "topic": "team/sensors",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "37464be6e8cb6157",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 90,
+        "y": 375,
+        "wires": [
+            [
+                "51f74d22d63a78e1"
+            ]
+        ]
+    },
+    {
+        "id": "51f74d22d63a78e1",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "Cold Path",
+        "func": "var sensorData = msg.payload; // Ensure msg.payload is JSON parsed object\n\n// Initialize context.headersWritten if it doesn't exist\ncontext.headersWritten = context.headersWritten || {};\n\nswitch(sensorData.sensor_type) {\n    case 'position':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv';\n        if (!context.headersWritten.gps) {\n            msg.payload = `timestamp,sensor_id,latitude,longitude,altitude\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.latitude},${sensorData.data.longitude},${sensorData.data.altitude}`;\n            context.headersWritten.gps = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.latitude},${sensorData.data.longitude},${sensorData.data.altitude}`;\n        }\n        break;\n    case 'acceleration':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv';\n        if (!context.headersWritten.acceleration) {\n            msg.payload = `timestamp,sensor_id,x,y,z\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n            context.headersWritten.acceleration = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n        }\n        break;\n    case 'speed':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv';\n        if (!context.headersWritten.speed) {\n            msg.payload = `timestamp,sensor_id,speed\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.speed}`;\n            context.headersWritten.speed = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.speed}`;\n        }\n        break;\n    case 'vital_parameters':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv';\n        if (!context.headersWritten.vital_parameters) {\n            msg.payload = `timestamp,sensor_id,heart_rate,body_temperature\\n${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n            context.headersWritten.vital_parameters = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.sensor_id},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n        }\n        break;\n    default:\n        return null; // Ignore unknown sensor types\n}\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 375,
+        "wires": [
+            [
+                "af225e0dcccf5096"
+            ]
+        ]
+    },
+    {
+        "id": "af225e0dcccf5096",
+        "type": "file",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "appendNewline": true,
+        "createDir": false,
+        "overwriteFile": "false",
+        "encoding": "utf8",
+        "x": 480,
+        "y": 375,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9af9a580c406e70f",
+        "type": "file in",
+        "z": "ca49d97b508754c7",
+        "name": "read acceleration",
+        "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": false,
+        "x": 1010,
+        "y": 180,
+        "wires": [
+            [
+                "60d094aa494770a4"
+            ]
+        ]
+    },
+    {
+        "id": "1c6e1cbd72b836f2",
+        "type": "file in",
+        "z": "ca49d97b508754c7",
+        "name": "read speed",
+        "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": false,
+        "x": 990,
+        "y": 340,
+        "wires": [
+            [
+                "b8a763e2b1498fe8"
+            ]
+        ]
+    },
+    {
+        "id": "b8a763e2b1498fe8",
+        "type": "debug",
+        "z": "ca49d97b508754c7",
+        "name": "debug 3",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1200,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "f42c9c74c332be4c",
+        "type": "inject",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 780,
+        "y": 340,
+        "wires": [
+            [
+                "1c6e1cbd72b836f2"
+            ]
+        ]
+    },
+    {
+        "id": "06ef1183c42cf596",
+        "type": "file in",
+        "z": "ca49d97b508754c7",
+        "name": "read GPS",
+        "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": false,
+        "x": 980,
+        "y": 420,
+        "wires": [
+            [
+                "5c6a8ba62738bf71"
+            ]
+        ]
+    },
+    {
+        "id": "b5948bfad23ec8bc",
+        "type": "file in",
+        "z": "ca49d97b508754c7",
+        "name": "read vital data",
+        "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "utf8",
+        "allProps": false,
+        "x": 1000,
+        "y": 620,
+        "wires": [
+            [
+                "c33bf6f0efa0750d"
+            ]
+        ]
+    },
+    {
+        "id": "cb4c6bc77392d309",
+        "type": "inject",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 780,
+        "y": 180,
+        "wires": [
+            [
+                "9af9a580c406e70f"
+            ]
+        ]
+    },
+    {
+        "id": "79f85fc2417a2000",
+        "type": "inject",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 780,
+        "y": 420,
+        "wires": [
+            [
+                "06ef1183c42cf596"
+            ]
+        ]
+    },
+    {
+        "id": "57f253d9989d06ae",
+        "type": "inject",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 780,
+        "y": 620,
+        "wires": [
+            [
+                "b5948bfad23ec8bc"
+            ]
+        ]
+    },
+    {
+        "id": "60d094aa494770a4",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "parse the data",
+        "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\nvar headers = lines[0].split(',');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV (skipping the header)\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i];\n    if (line.trim() === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Create an object for each line using the headers\n    for (var j = 0; j < headers.length; j++) {\n        data[headers[j].trim()] = values[j].trim(); // Ensure to trim the keys and values\n    }\n\n    // Calculate the magnitude of acceleration if it’s acceleration data\n    if (data.sensor_id === 'accel_002') {\n        var x = parseFloat(data.x);\n        var y = parseFloat(data.y);\n        var z = parseFloat(data.z);\n        var magnitude = Math.sqrt(x * x + y * y + z * z);\n        var totalAcceleration = Math.abs(x) + Math.abs(y) + Math.abs(z); // Calculate total acceleration\n        data.magnitude = magnitude;\n        data.totalAcceleration = totalAcceleration;\n    }\n\n    processedData.push(data);\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1240,
+        "y": 180,
+        "wires": [
+            [
+                "a2d02253e4ed46a5",
+                "84943a813620fa18"
+            ]
+        ]
+    },
+    {
+        "id": "3e86a52095b2c866",
+        "type": "ui_chart",
+        "z": "ca49d97b508754c7",
+        "name": "magnitude chart",
+        "group": "7b778c48129e069b",
+        "order": 2,
+        "width": 6,
+        "height": 4,
+        "label": "Magnitude Chart",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "1",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#189a51",
+            "#dcafe9",
+            "#ff7f0e",
+            "#197619",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1940,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a2d02253e4ed46a5",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "activity recognition (threshold-based)",
+        "func": "// Function node for activity recognition (threshold-based)\nvar data = msg.payload;\n\n// Initialize counters for each activity\nvar stationaryCount = 0;\nvar walkingCount = 0;\nvar runningCount = 0;\n\nfor (var i = 0; i < data.length; i++) {\n    var magnitude = parseFloat(data[i].magnitude);\n    var totalAcceleration = parseFloat(data[i].totalAcceleration);\n    \n    // Thresholds (adjust according to your data characteristics)\n    var walkingThreshold = 0.5;\n    var runningThreshold = 1.0;\n\n    // Classify activities based on thresholds\n    if (magnitude < walkingThreshold && totalAcceleration < walkingThreshold) {\n        data[i].activity = \"Stationary\";\n        stationaryCount++;\n    } else if ((magnitude >= walkingThreshold && magnitude < runningThreshold) || (totalAcceleration >= walkingThreshold && totalAcceleration < runningThreshold)) {\n        data[i].activity = \"Walking\";\n        walkingCount++;\n    } else {\n        data[i].activity = \"Running\";\n        runningCount++;\n    }\n}\n\n// Calculate percentages\nvar totalCount = stationaryCount + walkingCount + runningCount;\nvar stationaryPercentage = (stationaryCount / totalCount) * 100;\nvar walkingPercentage = (walkingCount / totalCount) * 100;\nvar runningPercentage = (runningCount / totalCount) * 100;\n\n// Add the counts and percentages to the message payload\nmsg.payload = {\n    data: data,\n    counts: {\n        stationary: stationaryCount,\n        walking: walkingCount,\n        running: runningCount\n    },\n    percentages: {\n        stationary: stationaryPercentage,\n        walking: walkingPercentage,\n        running: runningPercentage\n    },\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1650,
+        "y": 220,
+        "wires": [
+            [
+                "2ec874a3c19d5167",
+                "5b3dced4e3f0c3b9",
+                "0873379fa0c67b1e",
+                "31c4a14ff6748e09"
+            ]
+        ]
+    },
+    {
+        "id": "84943a813620fa18",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "setting magnitude payload",
+        "func": "var processedData = msg.payload;\n\n// Initialize an array to hold the data for the chart\nvar chartData = [];\n\n// Iterate over the processed data to extract timestamp and magnitude\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Only process entries with calculated magnitude\n    if (data.magnitude !== undefined) {\n        chartData.push({\n            x: new Date(data.timestamp),\n            y: data.magnitude\n        });\n    }\n}\n\n// Set the processed data for the chart as the message payload\nmsg.payload = [{\n    series: [\"Magnitude\"],\n    data: [chartData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1610,
+        "y": 140,
+        "wires": [
+            [
+                "3e86a52095b2c866"
+            ]
+        ]
+    },
+    {
+        "id": "569eb2b359b76de0",
+        "type": "ui_template",
+        "z": "ca49d97b508754c7",
+        "d": true,
+        "group": "7b778c48129e069b",
+        "name": "template display",
+        "order": 16,
+        "width": 6,
+        "height": 1,
+        "format": "<div>\n    <h2>Activity Recognition</h2>\n    <table>\n        <thead>\n            <tr>\n                <th>Timestamp</th>\n                <th>Sensor ID</th>\n                <th>Activity</th>\n            </tr>\n        </thead>\n        <tbody>\n            <tr ng-repeat=\"item in msg.payload\">\n                <td>{{ item.timestamp }}</td>\n                <td>{{ item.sensor_id }}</td>\n                <td>{{ item.activity }}</td>\n            </tr>\n        </tbody>\n    </table>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 2420,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "44bd3936beb88ac8",
+        "type": "ui_chart",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "group": "7b778c48129e069b",
+        "order": 1,
+        "width": 6,
+        "height": 4,
+        "label": "Activity Distribution",
+        "chartType": "pie",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#195886",
+            "#3c7317",
+            "#fd6a08",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 2470,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "31c4a14ff6748e09",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare stationary data for pie chart",
+        "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.stationary;\nmsg.topic = \"Stationary\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2101,
+        "y": 340,
+        "wires": [
+            [
+                "44bd3936beb88ac8"
+            ]
+        ]
+    },
+    {
+        "id": "5b3dced4e3f0c3b9",
+        "type": "debug",
+        "z": "ca49d97b508754c7",
+        "name": "debug 7",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 2160,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "2ec874a3c19d5167",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare walking data for pie chart",
+        "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.walking;\nmsg.topic = \"Walking\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2101,
+        "y": 220,
+        "wires": [
+            [
+                "44bd3936beb88ac8"
+            ]
+        ]
+    },
+    {
+        "id": "0873379fa0c67b1e",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare running data for pie chart",
+        "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.running;\nmsg.topic = \"Running\";\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 2101,
+        "y": 280,
+        "wires": [
+            [
+                "44bd3936beb88ac8"
+            ]
+        ]
+    },
+    {
+        "id": "5c6a8ba62738bf71",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "parse GPS data",
+        "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,sensor_id,latitude,longitude,altitude\n    data.timestamp = values[0].trim();\n    data.sensor_id = values[1].trim();\n    data.latitude = parseFloat(values[2].trim());\n    data.longitude = parseFloat(values[3].trim());\n    data.altitude = parseFloat(values[4].trim());\n\n    // Optionally, you can add more fields specific to GPS data here\n\n    processedData.push(data);\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1180,
+        "y": 420,
+        "wires": [
+            [
+                "b58cc88a458d0045",
+                "d885ef91fed9bb04",
+                "031e390006df7eee"
+            ]
+        ]
+    },
+    {
+        "id": "2d91ccd6275632e8",
+        "type": "ui_worldmap",
+        "z": "ca49d97b508754c7",
+        "group": "7b778c48129e069b",
+        "order": 18,
+        "width": 0,
+        "height": 0,
+        "name": "GPS Map",
+        "lat": "",
+        "lon": "",
+        "zoom": "",
+        "layer": "OSMG",
+        "cluster": "",
+        "maxage": "",
+        "usermenu": "hide",
+        "layers": "hide",
+        "panit": "false",
+        "panlock": "false",
+        "zoomlock": "false",
+        "hiderightclick": "true",
+        "coords": "none",
+        "showgrid": "false",
+        "showruler": "false",
+        "allowFileDrop": "false",
+        "path": "/worldmap",
+        "overlist": "DR,CO,RA,DN,HM",
+        "maplist": "OSMG,OSMC,EsriC,EsriS,EsriT,EsriDG,UKOS",
+        "mapname": "",
+        "mapurl": "",
+        "mapopt": "",
+        "mapwms": false,
+        "x": 1760,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "b58cc88a458d0045",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare for GPS Map",
+        "func": "// Iterate over each GPS data point\nfor (var i = 0; i < msg.payload.length; i++) {\n    var data = {\n        name: \"Point \" + (i + 1),     // Unique name for each point\n        lat: msg.payload[i].latitude, // Latitude of the point\n        lon: msg.payload[i].longitude // Longitude of the point\n        // Optionally, you can add more properties like icon and layer\n    };\n\n    // Emit each data point individually to the Worldmap node\n    node.send({\n        payload: data\n    });\n}\n\nreturn null; // Return null to suppress the original message\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1520,
+        "y": 400,
+        "wires": [
+            [
+                "2d91ccd6275632e8"
+            ]
+        ]
+    },
+    {
+        "id": "d885ef91fed9bb04",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "speed calculation",
+        "func": "// Assuming msg.payload contains an array of GPS data points\nvar gpsData = msg.payload;\n\n// Initialize an array to store results\nvar results = [];\n\n// Loop through the GPS data to calculate speed between consecutive points\nfor (var i = 1; i < gpsData.length; i++) {\n    var prevPoint = gpsData[i - 1];\n    var currPoint = gpsData[i];\n\n    // Extract timestamps (assuming they are in ISO format)\n    var prevTime = new Date(prevPoint.timestamp).getTime();\n    var currTime = new Date(currPoint.timestamp).getTime();\n\n    // Calculate time difference in seconds\n    var timeDiff = (currTime - prevTime) / 1000; // Convert to seconds\n\n    // Calculate distance between consecutive points using Haversine formula (in meters)\n    var distance = haversineDistance(prevPoint.latitude, prevPoint.longitude, currPoint.latitude, currPoint.longitude);\n\n    // Calculate speed (in meters per second)\n    var speed = distance / timeDiff;\n\n    // Prepare result object\n    var result = {\n        timestamp: currPoint.timestamp,\n        speed: speed\n    };\n\n    results.push(result);\n}\n\n// Set the processed data as the message payload\nmsg.payload = results;\n\n// Send the message to the next node\nreturn msg;\n\n// Haversine formula to calculate distance between two points in meters\nfunction haversineDistance(lat1, lon1, lat2, lon2) {\n    var R = 6371000; // Radius of the Earth in meters\n    var phi1 = toRadians(lat1);\n    var phi2 = toRadians(lat2);\n    var deltaPhi = toRadians(lat2 - lat1);\n    var deltaLambda = toRadians(lon2 - lon1);\n\n    var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +\n            Math.cos(phi1) * Math.cos(phi2) *\n            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);\n    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n\n    var distance = R * c;\n    return distance;\n}\n\n// Function to convert degrees to radians\nfunction toRadians(degrees) {\n    return degrees * Math.PI / 180;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1510,
+        "y": 460,
+        "wires": [
+            [
+                "2c63485b8064a116"
+            ]
+        ]
+    },
+    {
+        "id": "8c1b87221a2769fa",
+        "type": "ui_chart",
+        "z": "ca49d97b508754c7",
+        "name": "speed chart",
+        "group": "7b778c48129e069b",
+        "order": 8,
+        "width": 6,
+        "height": 3,
+        "label": "Speed chart",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 2090,
+        "y": 460,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2c63485b8064a116",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "setting speed for line chart",
+        "func": "// Function node to prepare data for the line chart\nvar speedData = msg.payload;\n\n// Initialize an array to hold the data for the chart\nvar chartData = [];\n\n// Iterate over the speed data to extract timestamp and speed\nfor (var i = 0; i < speedData.length; i++) {\n    var data = speedData[i];\n\n    chartData.push({\n        x: new Date(data.timestamp),\n        y: data.speed\n    });\n}\n\n// Set the processed data for the chart as the message payload\nmsg.payload = [{\n    series: [\"Speed\"],\n    data: [chartData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1820,
+        "y": 460,
+        "wires": [
+            [
+                "8c1b87221a2769fa"
+            ]
+        ]
+    },
+    {
+        "id": "031e390006df7eee",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "distance calculation",
+        "func": "var gpsData = msg.payload;\nvar totalDistance = 0;\n\nfor (var i = 1; i < gpsData.length; i++) {\n    var prevPoint = gpsData[i - 1];\n    var currPoint = gpsData[i];\n\n    var distance = haversineDistance(prevPoint.latitude, prevPoint.longitude, currPoint.latitude, currPoint.longitude);\n    totalDistance += distance;\n}\n\ntotalDistance = totalDistance / 1000; // Convert to kilometers\n\nmsg.payload = totalDistance.toFixed(2) + \" km\"; // Format the payload as a string with two decimal places\nreturn msg;\n\nfunction haversineDistance(lat1, lon1, lat2, lon2) {\n    var R = 6371000; // Radius of the Earth in meters\n    var phi1 = toRadians(lat1);\n    var phi2 = toRadians(lat2);\n    var deltaPhi = toRadians(lat2 - lat1);\n    var deltaLambda = toRadians(lon2 - lon1);\n\n    var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +\n        Math.cos(phi1) * Math.cos(phi2) *\n        Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);\n    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n\n    var distance = R * c;\n    return distance;\n}\n\nfunction toRadians(degrees) {\n    return degrees * Math.PI / 180;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1460,
+        "y": 520,
+        "wires": [
+            [
+                "0c67e298cfaf0cde"
+            ]
+        ]
+    },
+    {
+        "id": "0c67e298cfaf0cde",
+        "type": "ui_text",
+        "z": "ca49d97b508754c7",
+        "group": "7b778c48129e069b",
+        "order": 10,
+        "width": 4,
+        "height": 2,
+        "name": "",
+        "label": "Distance",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1690,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "c33bf6f0efa0750d",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "parse vital data",
+        "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV, starting from the second line to skip the header\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,sensor_id,heart_rate,body_temperature\n    data.timestamp = values[0].trim();\n    data.sensor_id = values[1].trim();\n    data.heart_rate = parseInt(values[2].trim(), 10);\n    data.body_temperature = parseFloat(values[3].trim());\n\n    // Optionally, you can add more fields specific to vital data here\n\n    processedData.push(data);\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1210,
+        "y": 620,
+        "wires": [
+            [
+                "dc85603680729750",
+                "195b06f4bd7e4d66",
+                "0ab4bd1de5650153"
+            ]
+        ]
+    },
+    {
+        "id": "dc85603680729750",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare heart rate for line chart",
+        "func": "var processedData = msg.payload;\n\n// Initialize arrays to hold the data for the heart rate chart\nvar heartRateData = [];\n\n// Iterate over the processed data to extract timestamp and heart rate\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Prepare data for heart rate chart\n    heartRateData.push({\n        x: new Date(data.timestamp),\n        y: data.heart_rate\n    });\n}\n\n// Set the processed heart rate data as the message payload\nmsg.payload = [{\n    series: [\"Heart Rate\"],\n    data: [heartRateData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1550,
+        "y": 600,
+        "wires": [
+            [
+                "9e78eaac52b44f19"
+            ]
+        ]
+    },
+    {
+        "id": "9e78eaac52b44f19",
+        "type": "ui_chart",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "group": "7b778c48129e069b",
+        "order": 19,
+        "width": 8,
+        "height": 8,
+        "label": "Heart Rate",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1950,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "195b06f4bd7e4d66",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "prepare body temprature for line chart",
+        "func": "var processedData = msg.payload;\n\n// Initialize array to hold the data for the body temperature chart\nvar bodyTemperatureData = [];\n\n// Iterate over the processed data to extract timestamp and body temperature\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Prepare data for body temperature chart\n    bodyTemperatureData.push({\n        x: new Date(data.timestamp),\n        y: data.body_temperature\n    });\n}\n\n// Set the processed body temperature data as the message payload\nmsg.payload = [{\n    series: [\"Body Temperature\"],\n    data: [bodyTemperatureData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1570,
+        "y": 660,
+        "wires": [
+            [
+                "55079e3f6fa8e005"
+            ]
+        ]
+    },
+    {
+        "id": "55079e3f6fa8e005",
+        "type": "ui_chart",
+        "z": "ca49d97b508754c7",
+        "name": "",
+        "group": "7b778c48129e069b",
+        "order": 20,
+        "width": 8,
+        "height": 8,
+        "label": "Body Temprature",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1970,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "0ab4bd1de5650153",
+        "type": "function",
+        "z": "ca49d97b508754c7",
+        "name": "statistical analysis for vital data",
+        "func": "var processedData = msg.payload;\n\n// Initialize arrays to hold heart rate and body temperature data\nvar heartRates = [];\nvar bodyTemperatures = [];\n\n// Iterate over processed data to extract heart rates and body temperatures\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Collect heart rates\n    heartRates.push(data.heart_rate);\n\n    // Collect body temperatures\n    bodyTemperatures.push(data.body_temperature);\n}\n\n// Calculate average heart rate\nvar sumHeartRate = heartRates.reduce((acc, val) => acc + val, 0);\nvar averageHeartRate = sumHeartRate / heartRates.length;\n\n// Calculate maximum and minimum heart rate\nvar maxHeartRate = Math.max(...heartRates);\nvar minHeartRate = Math.min(...heartRates);\n\n// Calculate average body temperature\nvar sumBodyTemperature = bodyTemperatures.reduce((acc, val) => acc + val, 0);\nvar averageBodyTemperature = sumBodyTemperature / bodyTemperatures.length;\n\n// Calculate maximum and minimum body temperature\nvar maxBodyTemperature = Math.max(...bodyTemperatures);\nvar minBodyTemperature = Math.min(...bodyTemperatures);\n\n// Prepare the payload with calculated statistics\nmsg.payload = {\n    averageHeartRate: averageHeartRate.toFixed(2),\n    maxHeartRate: maxHeartRate,\n    minHeartRate: minHeartRate,\n    averageBodyTemperature: averageBodyTemperature.toFixed(2),\n    maxBodyTemperature: maxBodyTemperature.toFixed(2),\n    minBodyTemperature: minBodyTemperature.toFixed(2)\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1520,
+        "y": 740,
+        "wires": [
+            [
+                "3e46adb742469bae"
+            ]
+        ]
+    },
+    {
+        "id": "3e46adb742469bae",
+        "type": "ui_template",
+        "z": "ca49d97b508754c7",
+        "group": "7b778c48129e069b",
+        "name": "",
+        "order": 20,
+        "width": 0,
+        "height": 0,
+        "format": "<h2>Vital Statistics</h2>\n<div>\n    <p><strong>Average Heart Rate:</strong> {{msg.payload.averageHeartRate}} bpm</p>\n    <p><strong>Maximum Heart Rate:</strong> {{msg.payload.maxHeartRate}} bpm</p>\n    <p><strong>Minimum Heart Rate:</strong> {{msg.payload.minHeartRate}} bpm</p>\n    <p><strong>Average Body Temperature:</strong> {{msg.payload.averageBodyTemperature}} °C</p>\n    <p><strong>Maximum Body Temperature:</strong> {{msg.payload.maxBodyTemperature}} °C</p>\n    <p><strong>Minimum Body Temperature:</strong> {{msg.payload.minBodyTemperature}} °C</p>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 1840,
+        "y": 740,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "71378afb87ae2a57",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "fd762f25ef4d4e23",
+        "order": 3,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "ead7bda58ef71f59",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "fd762f25ef4d4e23",
+        "order": 4,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "a4e8425aa35c07f8",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "fd762f25ef4d4e23",
+        "order": 5,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "975dd795771ea4ab",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "fd762f25ef4d4e23",
+        "order": 6,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "6ebd457ce8feecd9",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "fd762f25ef4d4e23",
+        "order": 7,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "3b5ab569294acd23",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 3,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "5499587dc9535d08",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 4,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "1316e87a3a1c2c06",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 5,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "7dca2c4871e5c033",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 6,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "89324a638118cd54",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 7,
+        "width": 16,
+        "height": 1
+    },
+    {
+        "id": "90d8c19163342425",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 9,
+        "width": 2,
+        "height": 1
+    },
+    {
+        "id": "2b67d32d75aa13a7",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 11,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "bee75edf8531a610",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 12,
+        "width": 2,
+        "height": 1
+    },
+    {
+        "id": "a8e2441e7495cb6e",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 13,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "a813c39228a949c6",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 14,
+        "width": 10,
+        "height": 1
+    },
+    {
+        "id": "0f42c7ddfb46c041",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 15,
+        "width": 6,
+        "height": 1
+    },
+    {
+        "id": "134ed201bfd2ed85",
+        "type": "ui_spacer",
+        "z": "ca49d97b508754c7",
+        "name": "spacer",
+        "group": "7b778c48129e069b",
+        "order": 17,
+        "width": 4,
+        "height": 1
+    },
+    {
+        "id": "37464be6e8cb6157",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "7b778c48129e069b",
+        "type": "ui_group",
+        "name": "Cold Path",
+        "tab": "c67b592948628c69",
+        "order": 2,
+        "disp": true,
+        "width": 16,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "fd762f25ef4d4e23",
+        "type": "ui_group",
+        "name": "Average Heart rate",
+        "tab": "701a158941a1ef14",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "c67b592948628c69",
+        "type": "ui_tab",
+        "name": "Final Project",
+        "icon": "dashboard",
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "701a158941a1ef14",
+        "type": "ui_tab",
+        "name": "Home",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]
