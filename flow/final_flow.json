@@ -1,16 +1,722 @@
 [
     {
-        "id": "bd9b790564293dee",
+        "id": "149c3bc769e9c702",
         "type": "tab",
-        "label": "Final Project",
+        "label": "IoT-Sensor-Data-Processing-NodeRED",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "96e9b445dc94dc85",
+        "id": "75612c5d07d50cec",
+        "type": "mqtt in",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "topic": "team/sensors",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "37464be6e8cb6157",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 410,
+        "y": 380,
+        "wires": [
+            [
+                "f74bdc4a4e3739d4",
+                "564b3e35eae78f30",
+                "c846d20ef072a6ce",
+                "c4e3a3bfdde8cc75",
+                "f885ebc672fb4284",
+                "69bf1f9c8867363f",
+                "5122d84d1fa3c3bf"
+            ]
+        ]
+    },
+    {
+        "id": "f74bdc4a4e3739d4",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Hot Path Heartrate",
+        "func": "\nvar teamId = global.get(\"selectedTeam\");\nvar anomaly = global.get(\"anomaly\");\n\nif (msg.payload.sensor_type === \"vital_parameters\") {\n\nif(msg.payload.sensor_team === teamId && teamId !== \"all\"){\n    let { heart_rate, body_temperature } = msg.payload.data;\n    if(anomaly === true){\n        heart_rate = heart_rate + 50;\n    }\n    var average = calculateAverage(heart_rate);\n\n    if (heart_rate > 100 || body_temperature > 37.5) {\n        node.warn(\"Heart Rate: critical, value: \"+ heart_rate);\n        msg.payload = {\n            status: \"high\",\n            heart_rate: heart_rate,\n            average : average\n        };   return msg;\n    }else{\n        msg.payload = {\n            status: \"normal\",\n            heart_rate: heart_rate,\n            average : average\n        };  return msg;\n    }\n}else if(teamId === \"all\"){\n   let heart_rate1 = context.get('HRTeam1') || 0;\n   let heart_rate2 = context.get('HRTeam2') || 0;\n   let heart_rate3 = context.get('HRTeam3') || 0;\n\n    if(msg.payload.sensor_team === \"team_1\"){\n        heart_rate1 = msg.payload.data.heart_rate;\n        context.set('HRTeam1', heart_rate1);\n    }\n    if(msg.payload.sensor_team === \"team_2\"){\n        heart_rate2 = msg.payload.data.heart_rate;\n        context.set('HRTeam2', heart_rate2);\n    }\n    if(msg.payload.sensor_team === \"team_3\"){\n        heart_rate3 = msg.payload.data.heart_rate;\n        context.set('HRTeam3', heart_rate3);\n\n    }\n\n    const heart_rate = ((heart_rate1 +  heart_rate2 + heart_rate3)/3).toFixed(2);\n    var average = calculateAverage(heart_rate);\n    msg.payload = {\n        status : \"combined values\",\n        heart_rate : heart_rate,\n        average : average,\n        };\n    return msg;\n}\n\nfunction calculateAverage(heart_rate){\n    var values = context.get('values') || [];\n     var sum = context.get('sum') || 0;\n \nvar value = parseFloat(heart_rate);\n\nif (!isNaN(value)) {\n    values.push(value)\n    sum += value;\n\n    if (values.length > 10) {\n        var removedValue = values.shift();\n        sum -= removedValue;\n    }\n\n    var average = (sum / values.length).toFixed(2);\n\n    context.set('values', values);\n    context.set('sum', sum);\n    return average;\n    } \n}\n}\n\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 380,
+        "wires": [
+            [
+                "c34d98d379dea45f",
+                "30c29812170bf22f",
+                "74570cf60f15fb6d",
+                "d3420aec7242c9cc"
+            ]
+        ]
+    },
+    {
+        "id": "564b3e35eae78f30",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Hot Path Body Temperature",
+        "func": "var teamId = global.get(\"selectedTeam\");\n\n\nif (msg.payload.sensor_type === \"vital_parameters\") {\n\nif(msg.payload.sensor_team === teamId && teamId !== \"all\"){\n\n    const { heart_rate, body_temperature } = msg.payload.data;\n    var average = calculateAverage(body_temperature);\n    \n    if (heart_rate > 100 || body_temperature > 37.5) {\n        node.warn(\"Anomaly detected:\"+ msg.payload);\n     msg.payload = {\n            status: \"critical\",\n            body_temperature: body_temperature,\n            average: average\n        };   return msg;\n    }else{\n        msg.payload = {\n            status: \"normal\",\n            body_temperature: body_temperature,\n            average : average\n        };   return msg;\n    }\n    \n} else if (teamId === \"all\") {\n    let body_temperature1 = context.get('BRTeam1') || 0;\n    let body_temperature2 = context.get('BRTeam2') || 0;\n    let body_temperature3 = context.get('BRTeam3') || 0;\n\n    if (msg.payload.sensor_team === \"team_1\") {\n        body_temperature1 = msg.payload.data.body_temperature;\n        context.set('BRTeam1', body_temperature1);\n    }\n    if (msg.payload.sensor_team === \"team_2\") {\n        body_temperature2 = msg.payload.data.body_temperature;\n        context.set('BRTeam2', body_temperature2);\n    }\n    if (msg.payload.sensor_team === \"team_3\") {\n        body_temperature3 = msg.payload.data.body_temperature;\n        context.set('BRTeam3', body_temperature3);\n\n    }\n\n    const body_temperature = ((body_temperature1 + body_temperature2 + body_temperature3) / 3).toFixed(2);\n    var average = calculateAverage(body_temperature);\n    msg.payload = {\n        status: \"combined values\",\n        body_temperature: body_temperature,\n        average: average\n    };\n    return msg;\n}\n\nfunction calculateAverage(body_temperature){\n    var values = context.get('values') || [];\n    var sum = context.get('sum') || 0;\n\n    var value = parseFloat(body_temperature);\n\n    if (!isNaN(value)) {\n        values.push(value)\n        sum += value;\n\n        if (values.length > 10) {\n            var removedValue = values.shift();\n            sum -= removedValue;\n        }\n\n        var average = (sum / values.length).toFixed(2);\n\n        context.set('values', values);\n        context.set('sum', sum);\n        return average;\n    }\n\n}\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 500,
+        "wires": [
+            [
+                "fce65bf681cec9da",
+                "550bb752a3334035",
+                "f218d28ae010fec1"
+            ]
+        ]
+    },
+    {
+        "id": "c846d20ef072a6ce",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Hot Path Position",
+        "func": "// retrieve the teamId from the global context\nvar teamId = global.get(\"selectedTeam\");\nvar previousTeamId = context.get(\"previousTeamId\");\n\nvar deletePayloads = [];\nvar updatePayload = null;\n\n// function to add a deletion message\nfunction addDeletePayload(name) {\n    deletePayloads.push({\n        name: name,\n        deleted: true\n    });\n}\n\n// handle incoming payload\nif (msg.payload.sensor_type === \"position\") {\n    // handle the case where 'all' was previously selected\n    if (previousTeamId === \"all\" && teamId !== \"all\") {\n        // if switching from \"all\" to a specific team, delete all previous team markers\n        [\"team_1\", \"team_2\", \"team_3\"].forEach(team => {\n            if (team !== teamId) {\n                addDeletePayload(team);\n            }\n        });\n    }\n    // handle the case where 'all' is currently selected\n    if (teamId === \"all\") {\n        // add/update markers for all teams\n        updatePayload = {\n            name: msg.payload.sensor_team,\n            lat: msg.payload.data.latitude,\n            lon: msg.payload.data.longitude\n        };\n    } else if (teamId !== \"all\" && msg.payload.sensor_team === teamId) {\n        // add/update marker for the selected team\n        updatePayload = {\n            name: teamId,\n            lat: msg.payload.data.latitude,\n            lon: msg.payload.data.longitude,\n            altitude: msg.payload.data.altitude\n        };\n    }\n}\n// handle the case where switching from a specific team to another\nif (previousTeamId !== \"all\" && previousTeamId !== teamId && teamId !== \"all\") {\n    addDeletePayload(previousTeamId);\n}\n// update the context with the current teamId\ncontext.set(\"previousTeamId\", teamId);\n\nmsg.payload = deletePayloads;\nif (updatePayload) {\n    msg.payload.push(updatePayload);\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 700,
+        "wires": [
+            [
+                "46c426073b26af55"
+            ]
+        ],
+        "info": "// Retrieve the teamId from the global context\r\nvar teamId = global.get(\"selectedTeam\");\r\nvar previousTeamId = context.get(\"previousTeamId\");\r\n\r\n// Debugging output\r\nnode.warn(`Current teamId: ${teamId}`);\r\nnode.warn(`Previous teamId: ${previousTeamId}`);\r\n\r\nvar deletePayload = null;\r\nvar updatePayload = null;\r\n\r\n// Handle incoming payload\r\nif (msg.payload.sensor_type === \"position\") {\r\n    if (teamId !== \"all\" && msg.payload.sensor_team === teamId) {\r\n        // Prepare update payload for the selected team\r\n        const { latitude, longitude, altitude } = msg.payload.data;\r\n        updatePayload = {\r\n            name: teamId,\r\n            lat: latitude,\r\n            lon: longitude,\r\n            altitude: altitude\r\n        };\r\n    } else if (teamId === \"all\") {\r\n        // Prepare update payload for all teams\r\n        const { latitude, longitude } = msg.payload.data;\r\n        updatePayload = {\r\n            name: msg.payload.sensor_team,\r\n            lat: latitude,\r\n            lon: longitude\r\n        };\r\n    }\r\n}\r\n\r\n// Prepare delete payload if the teamId has changed\r\nif (previousTeamId && previousTeamId !== teamId) {\r\n    if(previousTeamId === \"all\" && teamId === \"team_1\"){\r\n        deletePayload = {\r\n            {name : previousTeamId}\r\n        }\r\n    }\r\n    deletePayload = {\r\n        name: previousTeamId,\r\n        deleted: true\r\n    };\r\n    node.warn(`Preparing to delete marker for team: ${previousTeamId}`);\r\n}\r\n\r\n// Update the context with the current teamId\r\ncontext.set(\"previousTeamId\", teamId);\r\n\r\n// Construct the output payload\r\nmsg.payload = [];\r\nif (deletePayload) {\r\n    msg.payload.push(deletePayload);\r\n}\r\nif (updatePayload) {\r\n    msg.payload.push(updatePayload);\r\n}\r\n\r\n// Return the constructed payload array\r\nreturn msg;"
+    },
+    {
+        "id": "c4e3a3bfdde8cc75",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Hot Path Speed",
+        "func": "var teamId = global.get(\"selectedTeam\");\n\nif (msg.payload.sensor_type === \"speed\") {\nif (msg.payload.sensor_team === teamId && teamId !== \"all\") {\n\n\nconst speed = msg.payload.data.speed;\n    var averageSpeed = calculateAverage(speed);\n         \n    if (speed <= 7) {\n        msg.payload = {\n            activity: \"walking\",\n            speed: speed,\n            averageSpeed: averageSpeed\n        };\n        flow.set(\"dataWalking\", msg.payload);\n\n         //return msg;\n    } else if(speed > 7 && speed < 14) {\n        msg.payload = {\n            activity: \"running\",\n            speed: speed,\n            averageSpeed: averageSpeed\n        }; //return msg;\n    }else{\n        msg.payload = {\n            activity: \"sprinting\",\n            speed : speed,\n            averageSpeed: averageSpeed\n        }; //return msg;\n    }\n    flow.set(\"dataSpeed\", msg.payload);\n    return msg;\n    \n    }  else if (teamId === \"all\") {\n    let speed1 = context.get('speedTeam1') || 0;\n    let speed2 = context.get('speedTeam2') || 0;\n    let speed3 = context.get('speedTeam3') || 0;\n\n    if (msg.payload.sensor_team === \"team_1\") {\n        speed1 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam1', speed1);\n    }\n    if (msg.payload.sensor_team === \"team_2\") {\n        speed2 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam2', speed2);\n    }\n    if (msg.payload.sensor_team === \"team_3\") {\n        speed3 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam3', speed3);\n\n    }\n\n    var speed = ((speed1 + speed2 + speed3) / 3).toFixed(2);\n    var averageSpeed = calculateAverage(speed);\n    msg.payload = {\n        activity: \"combined activities\",\n        speed: speed,\n        averageSpeed: averageSpeed,\n        speed1 : speed1,\n        speed2: speed2,\n        speed3: speed3\n    };\n    return msg;\n}\n    function calculateAverage(speed){\n        var values = context.get('values') || [];\n        var sum = context.get('sum') || 0;\n\n        var value = parseFloat(speed);\n\n        if (!isNaN(value)) {\n            values.push(value)\n            sum += value;\n\n            if (values.length > 10) {\n                var removedValue = values.shift();\n                sum -= removedValue;\n            }\n\n            var averageSpeed = (sum / values.length).toFixed(2);\n\n            context.set('values', values);\n            context.set('sum', sum);\n            return averageSpeed;\n        }\n    }\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 820,
+        "wires": [
+            [
+                "c618a58345d5b9df",
+                "098f916d2d27ecee",
+                "4fa02e2ba43cb8b7",
+                "d3420aec7242c9cc"
+            ]
+        ]
+    },
+    {
+        "id": "f885ebc672fb4284",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Hot Path Acceleration",
+        "func": "\n\nvar current_timestamp = msg.payload.timestampRegular;\nvar previous_velocityTeam1 = context.get('previous_velocityTeam1') || null;\nvar previous_velocityTeam2 = context.get('previous_velocityTeam2') || null;\nvar previous_velocityTeam3 = context.get('previous_velocityTeam3') || null;\nvar previous_timestampTeam1 = context.get('previous_timestampTeam1') || null;\nvar previous_timestampTeam2 = context.get('previous_timestampTeam2') || null;\nvar previous_timestampTeam3 = context.get('previous_timestampTeam3') || null;\nvar accelerationTeam1 = context.get('accelerationTeam3') || null;;\nvar accelerationTeam2 = context.get('accelerationTeam3') || null;;\nvar accelerationTeam3 = context.get('accelerationTeam3') || null;;\n\nvar teamId = global.get(\"selectedTeam\");\nlet current_velocityTeam1 = null;\nlet current_velocityTeam2 = null;\nlet current_velocityTeam3 = null;\n\n\nif (msg.payload.sensor_type === \"speed\") {\n     \nif(msg.payload.sensor_team === \"team_1\"){\n    current_velocityTeam1 = msg.payload.data.speed;\n\nif (previous_velocityTeam1 !== null && previous_timestampTeam1 !== null) {\n\n    var velocity = current_velocityTeam1 - previous_velocityTeam1;\n    var time = current_timestamp - previous_timestampTeam1;\n\n    // Check if delta_t is not zero to avoid division by zero\n    if (time !== 0) {\n        // Calculate acceleration\n        accelerationTeam1 = velocity / time;\n        context.set('accelerationTeam1', accelerationTeam1);\n        context.set('previous_velocityTeam1', current_velocityTeam1);\n        context.set('previous_timestampTeam1', current_timestamp);\n    } else {\n        return null; // Ignore the message if delta_t is zero\n    }\n} else {\n    // Initialize context variables if they are not set\n    context.set('previous_velocityTeam1', current_velocityTeam1);\n    context.set('previous_timestampTeam1', current_timestamp);\n    return null; // No acceleration can be calculated on the first data point\n}\n    } \nif (msg.payload.sensor_team === \"team_2\") {\n           current_velocityTeam2 = msg.payload.data.speed;\n           \n        if (previous_velocityTeam2 !== null && previous_timestampTeam2 !== null) {\n\n            var velocity = current_velocityTeam2 - previous_velocityTeam2;\n            var time = current_timestamp - previous_timestampTeam2;\n            \n            // Check if delta_t is not zero to avoid division by zero\n            if (time !== 0) {\n                // Calculate acceleration\n                accelerationTeam2 = velocity / time;\n                context.set('accelerationTeam2', accelerationTeam2);\n                context.set('previous_velocityTeam2', current_velocityTeam2);\n                context.set('previous_timestamp', current_timestamp);\n                \n                \n            } else {\n                return null; // Ignore the message if delta_t is zero\n            }\n        } else {\n            // Initialize context variables if they are not set\n            context.set('previous_velocityTeam2', current_velocityTeam2);\n            context.set('previous_timestampTeam2', current_timestamp);\n            return null; // No acceleration can be calculated on the first data point\n        }\n    } \nif (msg.payload.sensor_team === \"team_3\") {\n        current_velocityTeam3 = msg.payload.data.speed;\n\n        if (previous_velocityTeam3 !== null && previous_timestampTeam3 !== null) {\n\n            var velocity = current_velocityTeam3 - previous_velocityTeam3;\n            var time = current_timestamp - previous_timestampTeam3;\n\n            // Check if delta_t is not zero to avoid division by zero\n            if (time !== 0) {\n                // Calculate acceleration\n                accelerationTeam3 = velocity / time;\n                context.set('accelerationTeam3', accelerationTeam3);\n                context.set('previous_velocityTeam3', current_velocityTeam3);\n                context.set('previous_timestampTeam3', current_timestamp);\n            } else {\n                return null; // Ignore the message if delta_t is zero\n            }\n        } else {\n            // Initialize context variables if they are not set\n            context.set('previous_velocityTeam3', current_velocityTeam3);\n            context.set('previous_timestampTeam3', current_timestamp);\n            return null; // No acceleration can be calculated on the first data point\n        }\n    }\n    if(teamId === \"team_1\"){\n        var acceleration = accelerationTeam1;\n        msg.payload = acceleration;\n    }else if(teamId === \"team_2\"){\n        var acceleration = accelerationTeam2;\n        msg.payload = acceleration;\n    }else if(teamId === \"team_3\"){\n        var acceleration = accelerationTeam3;\n        msg.payload = acceleration;\n        \n    }else {\n        \n        let acceleration = (accelerationTeam1 + accelerationTeam2 + accelerationTeam3)/3;\n        msg.payload = acceleration;\n    }\n    return msg;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 940,
+        "wires": [
+            [
+                "b9db528833585ea6"
+            ]
+        ]
+    },
+    {
+        "id": "c07abae0c8e4ce82",
+        "type": "ui_gauge",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "group": "0c220355ed5d450a",
+        "order": 5,
+        "width": 8,
+        "height": 6,
+        "gtype": "gage",
+        "title": "heart_rate",
+        "label": "bpm",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "200",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "80",
+        "seg2": "120",
+        "diff": false,
+        "className": "",
+        "x": 1110,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "c34d98d379dea45f",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "extract heart rate",
+        "func": "\nconst heart_rate = msg.payload.heart_rate;\nmsg.payload = heart_rate;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 400,
+        "wires": [
+            [
+                "c07abae0c8e4ce82"
+            ]
+        ]
+    },
+    {
+        "id": "30c29812170bf22f",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 6,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Status heart rate",
+        "format": "{{msg.payload.status}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 910,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "fce65bf681cec9da",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "extract body temperature",
+        "func": "const body_temperature = msg.payload.body_temperature;\nmsg.payload = body_temperature;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 910,
+        "y": 540,
+        "wires": [
+            [
+                "caed3b7cabebaedf"
+            ]
+        ]
+    },
+    {
+        "id": "caed3b7cabebaedf",
+        "type": "ui_gauge",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "group": "0c220355ed5d450a",
+        "order": 12,
+        "width": 8,
+        "height": 6,
+        "gtype": "gage",
+        "title": "body_temperature",
+        "label": "°C",
+        "format": "{{value}}",
+        "min": "34",
+        "max": "45",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "38",
+        "seg2": "42",
+        "diff": false,
+        "className": "",
+        "x": 1130,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "550bb752a3334035",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 13,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Status body temperature",
+        "format": "{{msg.payload.status}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 910,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "46c426073b26af55",
+        "type": "ui_worldmap",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 4,
+        "width": 8,
+        "height": 8,
+        "name": "Position",
+        "lat": "",
+        "lon": "",
+        "zoom": "7",
+        "layer": "OSMG",
+        "cluster": "",
+        "maxage": "",
+        "usermenu": "hide",
+        "layers": "hide",
+        "panit": "false",
+        "panlock": "false",
+        "zoomlock": "false",
+        "hiderightclick": "true",
+        "coords": "none",
+        "showgrid": "false",
+        "showruler": "false",
+        "allowFileDrop": "false",
+        "path": "/worldmap2",
+        "overlist": "DR,CO,RA,DN,HM",
+        "maplist": "OSMG,OSMC,EsriC,EsriS,EsriT,EsriDG,UKOS",
+        "mapname": "",
+        "mapurl": "",
+        "mapopt": "",
+        "mapwms": false,
+        "x": 800,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "f916dfe06358c81a",
+        "type": "ui_gauge",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "group": "0c220355ed5d450a",
+        "order": 20,
+        "width": 8,
+        "height": 6,
+        "gtype": "gage",
+        "title": "speed",
+        "label": "km/h",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "20",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1010,
+        "y": 940,
+        "wires": []
+    },
+    {
+        "id": "c618a58345d5b9df",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "extract speed",
+        "func": "\nconst speed = msg.payload.speed;\nmsg.payload = speed;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 940,
+        "wires": [
+            [
+                "f916dfe06358c81a"
+            ]
+        ]
+    },
+    {
+        "id": "098f916d2d27ecee",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 21,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Activity status",
+        "format": "{{msg.payload.activity}} ",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 860,
+        "y": 900,
+        "wires": []
+    },
+    {
+        "id": "74570cf60f15fb6d",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 7,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Average current heartbeat rate: ",
+        "format": "{{msg.payload.average}} bpm",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 950,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "f218d28ae010fec1",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 14,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Average current body temperature:",
+        "format": "{{msg.payload.average}} °C",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 940,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "4fa02e2ba43cb8b7",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 23,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Average current pace",
+        "format": "{{msg.payload.averageSpeed}} km/h",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 880,
+        "y": 840,
+        "wires": []
+    },
+    {
+        "id": "b9db528833585ea6",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 25,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Acceleration",
+        "format": "{{msg.payload}} m/s^2",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 850,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "d3420aec7242c9cc",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "detect heart anomaly",
+        "func": "var average = msg.payload.average;  \nvar activitySpeed = flow.get(\"dataSpeed\").activity;  \nlet statusAnomaly;\n\nif(average >= 110 && activitySpeed === \"walking\"){\n    statusAnomaly = \"Heart anomaly detected\";\n}else if(average >= 130 && activitySpeed === \"running\"){\n    statusAnomaly = \"Heart anomaly detected\";\n}else if(average >= 160 && activitySpeed === \"sprinting\"){\n    statusAnomaly = \"Heart anomaly detected\";\n}else{\n    statusAnomaly = \"no anomaly detected\";\n}\nmsg.payload = statusAnomaly;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 280,
+        "wires": [
+            [
+                "a2041bca8d5e1211"
+            ]
+        ]
+    },
+    {
+        "id": "381eaac708ca1807",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 15,
+        "width": 8,
+        "height": 1,
+        "name": "",
+        "label": "Distance traveled",
+        "format": "{{msg.payload}} km",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 830,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "a2041bca8d5e1211",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 8,
+        "width": 9,
+        "height": 1,
+        "name": "",
+        "label": "Status Anomaly",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1140,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "660835467245b522",
+        "type": "ui_dropdown",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "label": "",
+        "tooltip": "",
+        "place": "Select team",
+        "group": "0c220355ed5d450a",
+        "order": 1,
+        "width": 8,
+        "height": 1,
+        "passthru": true,
+        "multiple": false,
+        "options": [
+            {
+                "label": "All teams",
+                "value": "all",
+                "type": "str"
+            },
+            {
+                "label": "Team 1",
+                "value": "team_1",
+                "type": "str"
+            },
+            {
+                "label": " Team 2",
+                "value": "team_2",
+                "type": "str"
+            },
+            {
+                "label": " Team 3",
+                "value": "team_3",
+                "type": "str"
+            }
+        ],
+        "payload": "",
+        "topic": "payload",
+        "topicType": "msg",
+        "className": "",
+        "x": 100,
+        "y": 380,
+        "wires": [
+            [
+                "30015b0d9ad8d0b3"
+            ]
+        ]
+    },
+    {
+        "id": "30015b0d9ad8d0b3",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "extract dropdown value",
+        "func": "\nvar teamId = msg.payload;\nglobal.set(\"selectedTeam\", teamId);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 170,
+        "y": 460,
+        "wires": [
+            [
+                "4c79c1f3b75f43d1"
+            ]
+        ]
+    },
+    {
+        "id": "4c79c1f3b75f43d1",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "determine teamId",
+        "func": "\n\nvar teamId = global.get(\"selectedTeam\");\nif(teamId === 1){\n    msg.payload = \"Team 1\";\n}else if(teamId === 2){\n    msg.payload = \"Team 2\";\n}else if(teamId === 3){\n    msg.payload = \"Team 3\";\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 150,
+        "y": 520,
+        "wires": [
+            [
+                "18a8723a55c6d0d4"
+            ]
+        ]
+    },
+    {
+        "id": "18a8723a55c6d0d4",
+        "type": "ui_text",
+        "z": "149c3bc769e9c702",
+        "group": "0c220355ed5d450a",
+        "order": 2,
+        "width": 4,
+        "height": 1,
+        "name": "",
+        "label": "Team",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "className": "",
+        "style": false,
+        "font": "",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 130,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "69bf1f9c8867363f",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "Calculate Distance",
+        "func": "var teamId = global.get(\"selectedTeam\");\n\n\nvar totalDistanceTeam1 = context.get('totalDistanceTeam1') || 0;\nlet latArrayTeam1 = context.get('previous_latArrayTeam1') || [];\nlet lonArrayTeam1 = context.get('previous_lonArrayTeam1') || [];\nvar totalDistanceTeam2 = context.get('totalDistanceTeam2') || 0;\nlet latArrayTeam2 = context.get('previous_latArrayTeam2') || [];\nlet lonArrayTeam2 = context.get('previous_lonArrayTeam2') || [];\nvar totalDistanceTeam3 = context.get('totalDistanceTeam3') || 0;\nlet latArrayTeam3 = context.get('previous_latArrayTeam3') || [];\nlet lonArrayTeam3 = context.get('previous_lonArrayTeam3') || [];\n\n\n\n\n\n\nif(msg.payload.sensor_type === \"position\"){\n    if(msg.payload.sensor_team === \"team_1\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam1.push(latitude);\n          if(latArrayTeam1.length > 2){\n             latArrayTeam1.shift();\n           }\n          lonArrayTeam1.push(longitude);\n          if(lonArrayTeam1.length > 2){\n             lonArrayTeam1.shift();\n}\n\n        if(latArrayTeam1.length == 2){\n           //for (var i = 1; i < latArrayTeam1.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam1[0], lonArrayTeam1[0], latArrayTeam1[1], lonArrayTeam1[1]);\n    totalDistanceTeam1 += distanceCalc;\n//}\n}\ncontext.set('totalDistance', totalDistanceTeam1);\ncontext.set('totalDistanceTeam1', totalDistanceTeam1);\n\n//totalDistanceTeam1 = totalDistanceTeam1 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam1', latArrayTeam1);\ncontext.set('previous_lonArrayTeam1', lonArrayTeam1);\n\n//msg.payload = {totalD: totalDistanceTeam1.toFixed(4) + \"km\",\n//            type : msg.payload.sensor_type}; // Format the payload as a string with two decimal places\n\n//        return msg;\n}\n    if (msg.payload.sensor_team === \"team_2\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam2.push(latitude);\n          if(latArrayTeam2.length > 2){\n             latArrayTeam2.shift();\n           }\n          lonArrayTeam2.push(longitude);\n          if(lonArrayTeam2.length > 2){\n             lonArrayTeam2.shift();\n}\n\n        if(latArrayTeam2.length == 2){\n           for (var i = 1; i < latArrayTeam2.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam2[0], lonArrayTeam2[0], latArrayTeam2[1], lonArrayTeam2[1]);\n    totalDistanceTeam2 += distanceCalc;\n}\n}\ncontext.set('totalDistance', totalDistanceTeam1);\ncontext.set('totalDistanceTeam2', totalDistanceTeam2);\n\n//totalDistanceTeam2 = totalDistanceTeam2 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam2', latArrayTeam2);\ncontext.set('previous_lonArrayTeam2', lonArrayTeam2);\n\n\n    }\n    if (msg.payload.sensor_team === \"team_3\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam3.push(latitude);\n          if(latArrayTeam3.length > 2){\n             latArrayTeam3.shift();\n           }\n          lonArrayTeam3.push(longitude);\n          if(lonArrayTeam3.length > 2){\n             lonArrayTeam3.shift();\n}\n\n        if(latArrayTeam3.length == 2){\n           for (var i = 1; i < latArrayTeam3.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam3[0], lonArrayTeam3[0], latArrayTeam3[1], lonArrayTeam3[1]);\n    totalDistanceTeam3 += distanceCalc;\n}\n}\ncontext.set('totalDistance', totalDistanceTeam3);\ncontext.set('totalDistanceTeam3', totalDistanceTeam3);\n\n//totalDistanceTeam3 = totalDistanceTeam3 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam3', latArrayTeam3);\ncontext.set('previous_lonArrayTeam3', lonArrayTeam3);\n\n    }\n    function haversineDistance(lat1, lon1, lat2, lon2) {\n        var R = 6371000; // Radius of the Earth in meters\n        var phi1 = toRadians(lat1);\n        var phi2 = toRadians(lat2);\n        var deltaPhi = toRadians(lat2 - lat1);\n        var deltaLambda = toRadians(lon2 - lon1);\n\n        var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +\n            Math.cos(phi1) * Math.cos(phi2) *\n            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);\n        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n\n        var distance = R * c;\n        return distance;\n    }\n\n    function toRadians(degrees) {\n        return degrees * Math.PI / 180;\n    }\n\n\n\n    \n\n    if (teamId === \"team_1\"){\n         msg.payload = (totalDistanceTeam1 / 1000).toFixed(2);\n\n    }else if(teamId === \"team_2\"){\n        msg.payload = (totalDistanceTeam2 / 1000).toFixed(2);\n    }else if(teamId === \"team_3\"){\n        msg.payload = (totalDistanceTeam3 / 1000).toFixed(2);\n    }else if(teamId === \"all\"){\n        msg.payload = ((totalDistanceTeam1 + totalDistanceTeam2 + totalDistanceTeam3)/1000).toFixed(2);\n    }\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 630,
+        "y": 600,
+        "wires": [
+            [
+                "381eaac708ca1807"
+            ]
+        ]
+    },
+    {
+        "id": "87e37cc2f9c834d4",
+        "type": "ui_switch",
+        "z": "149c3bc769e9c702",
+        "name": "",
+        "label": "activate anomaly",
+        "tooltip": "",
+        "group": "0c220355ed5d450a",
+        "order": 3,
+        "width": 5,
+        "height": 1,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 470,
+        "y": 280,
+        "wires": [
+            [
+                "4be2545108e23f73"
+            ]
+        ]
+    },
+    {
+        "id": "4be2545108e23f73",
+        "type": "function",
+        "z": "149c3bc769e9c702",
+        "name": "activate anomaly",
+        "func": "var anomaly = msg.payload;\nglobal.set(\"anomaly\", anomaly);\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5b0aaf148bc82310",
         "type": "file",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "",
         "filename": "filename",
         "filenameType": "msg",
@@ -18,17 +724,17 @@
         "createDir": false,
         "overwriteFile": "false",
         "encoding": "utf8",
-        "x": 1000,
-        "y": 640,
+        "x": 428,
+        "y": 1020,
         "wires": [
             []
         ]
     },
     {
-        "id": "90cda6ea9dcab6f1",
+        "id": "5122d84d1fa3c3bf",
         "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "preparing payload for cold path",
+        "z": "149c3bc769e9c702",
+        "name": "Cold Path",
         "func": "var sensorData = msg.payload; \n\n// Initialize context.headersWritten if it doesn't exist\ncontext.headersWritten = context.headersWritten || {};\n\nswitch(sensorData.sensor_type) {\n    case 'position':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv';\n        if (!context.headersWritten.gps) {\n            msg.payload = `timestamp,timestampRegular,sensor_id,sensor_team,latitude,longitude\\n${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.latitude},${sensorData.data.longitude}`;\n            context.headersWritten.gps = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.latitude},${sensorData.data.longitude}`;\n        }\n        break;\n    case 'acceleration':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv';\n        if (!context.headersWritten.acceleration) {\n            msg.payload = `timestamp,timestampRegular,sensor_id,sensor_team,x,y,z\\n${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n            context.headersWritten.acceleration = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.x},${sensorData.data.y},${sensorData.data.z}`;\n        }\n        break;\n    case 'speed':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv';\n        if (!context.headersWritten.speed) {\n            msg.payload = `timestamp,timestampRegular,sensor_id,sensor_team,speed\\n${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.speed}`;\n            context.headersWritten.speed = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.speed}`;\n        }\n        break;\n    case 'vital_parameters':\n        msg.filename = '/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv';\n        if (!context.headersWritten.vital_parameters) {\n            msg.payload = `timestamp,timestampRegular,sensor_id,sensor_team,heart_rate,body_temperature\\n${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n            context.headersWritten.vital_parameters = true;\n        } else {\n            msg.payload = `${sensorData.timestamp},${sensorData.timestampRegular},${sensorData.sensor_id},${sensorData.sensor_team},${sensorData.data.heart_rate},${sensorData.data.body_temperature}`;\n        }\n        break;\n    default:\n        return null; // Ignore unknown sensor types\n}\n\nreturn msg;\n",
         "outputs": 1,
         "timeout": 0,
@@ -36,18 +742,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 990,
-        "y": 560,
+        "x": 268,
+        "y": 1020,
         "wires": [
             [
-                "96e9b445dc94dc85"
+                "5b0aaf148bc82310"
             ]
         ]
     },
     {
-        "id": "861a5d01c5ee7bc9",
+        "id": "5326843d9372bdf2",
         "type": "file in",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "read acceleration",
         "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/accel_data.csv",
         "filenameType": "str",
@@ -56,18 +762,18 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": false,
-        "x": 1650,
-        "y": 1140,
+        "x": 790,
+        "y": 1080,
         "wires": [
             [
-                "2a8621c85c2d3bde"
+                "419952c33cb55f5d"
             ]
         ]
     },
     {
-        "id": "48af1a0b23696310",
+        "id": "1f27bcdf443f90d5",
         "type": "file in",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "read GPS",
         "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/gps_data.csv",
         "filenameType": "str",
@@ -76,18 +782,18 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": false,
-        "x": 1612,
-        "y": 1347,
+        "x": 752,
+        "y": 1287,
         "wires": [
             [
-                "fcef0d18191642db"
+                "03e22115e696cde6"
             ]
         ]
     },
     {
-        "id": "2d93256896aeb310",
+        "id": "98e02d176fde93ed",
         "type": "file in",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "read vital data",
         "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/vital_data.csv",
         "filenameType": "str",
@@ -96,18 +802,18 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": false,
-        "x": 1640,
-        "y": 1540,
+        "x": 780,
+        "y": 1480,
         "wires": [
             [
-                "bafedcbb1e1df395"
+                "f575363abf5ec4cf"
             ]
         ]
     },
     {
-        "id": "46a336300756d22b",
+        "id": "b1ca47ebe840d834",
         "type": "inject",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "Inject every 1 hour",
         "props": [
             {
@@ -125,21 +831,21 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 1040,
-        "y": 1260,
+        "x": 180,
+        "y": 1200,
         "wires": [
             [
-                "861a5d01c5ee7bc9",
-                "48af1a0b23696310",
-                "2d93256896aeb310",
-                "41337f3fa3ad0144"
+                "5326843d9372bdf2",
+                "1f27bcdf443f90d5",
+                "98e02d176fde93ed",
+                "47c585d40b059aa3"
             ]
         ]
     },
     {
-        "id": "2a8621c85c2d3bde",
+        "id": "419952c33cb55f5d",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "parse acceleration data",
         "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\nvar selectedTeam = global.get('selectedTeam');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,timestampRegular,sensor_id,sensor_team,x,y,z\n    data.timestamp = values[0].trim();\n    data.timestampRegular = parseInt(values[1].trim(), 10); // Assuming timestampRegular is an integer\n    data.sensor_id = values[2].trim();\n    data.sensor_team = values[3].trim();\n    data.x = parseFloat(values[4].trim());\n    data.y = parseFloat(values[5].trim());\n    data.z = parseFloat(values[6].trim());\n\n    // Check for valid x, y, z values\n    if (!isNaN(data.x) && !isNaN(data.y) && !isNaN(data.z)) {\n        // Calculate magnitude\n        data.magnitude = Math.sqrt(data.x * data.x + data.y * data.y + data.z * data.z);\n\n        if (selectedTeam !== \"all\" && selectedTeam != null && selectedTeam != undefined) {\n            if (data.sensor_team === selectedTeam) {\n                processedData.push(data);\n            }\n        } else {\n            processedData.push(data);\n        }\n    }\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\n\nreturn msg;\n",
         "outputs": 1,
@@ -148,19 +854,19 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1940,
-        "y": 1140,
+        "x": 1080,
+        "y": 1080,
         "wires": [
             [
-                "cda4b3a0127a01e9",
-                "c7d6842a4194c974"
+                "0bd48d399a8c98fb",
+                "444e5a1915c573e0"
             ]
         ]
     },
     {
-        "id": "a64617c69343fd93",
+        "id": "4a8ff2fe1eeb212c",
         "type": "ui_chart",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "magnitude chart",
         "group": "7b778c48129e069b",
         "order": 7,
@@ -195,16 +901,16 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 2572,
-        "y": 1080,
+        "x": 1712,
+        "y": 1020,
         "wires": [
             []
         ]
     },
     {
-        "id": "cda4b3a0127a01e9",
+        "id": "0bd48d399a8c98fb",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "setting magnitude payload",
         "func": "var processedData = msg.payload;\n\n// Initialize an array to hold the data for the chart\nvar chartData = [];\n\n// Iterate over the processed data to extract timestamp and magnitude\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Only process entries with calculated magnitude\n    if (data.magnitude !== undefined) {\n        chartData.push({\n            x: new Date(data.timestamp),\n            y: data.magnitude\n        });\n    }\n}\n\n// Set the processed data for the chart as the message payload\nmsg.payload = [{\n    series: [\"Magnitude\"],\n    data: [chartData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
         "outputs": 1,
@@ -213,18 +919,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2292,
-        "y": 1080,
+        "x": 1432,
+        "y": 1020,
         "wires": [
             [
-                "a64617c69343fd93"
+                "4a8ff2fe1eeb212c"
             ]
         ]
     },
     {
-        "id": "fcef0d18191642db",
+        "id": "03e22115e696cde6",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "parse GPS data",
         "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\nvar selectedTeam = global.get('selectedTeam');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,timestampRegular,sensor_id,sensor_team,latitude,longitude\n    data.timestamp = values[0].trim();\n    data.timestampRegular = parseInt(values[1].trim(), 10); // Assuming timestampRegular is an integer\n    data.sensor_id = values[2].trim();\n    data.sensor_team = values[3].trim();\n    data.latitude = parseFloat(values[4].trim());\n    data.longitude = parseFloat(values[5].trim());\n\n    if (!isNaN(data.latitude) && !isNaN(data.longitude)) {\n        if (selectedTeam !== \"all\" && selectedTeam != null && selectedTeam != undefined) {\n            if (data.sensor_team === selectedTeam) {\n                processedData.push(data);\n            }\n        } else {\n            processedData.push(data);\n        }\n    }\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\n\nreturn msg;\n",
         "outputs": 1,
@@ -233,19 +939,19 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1892,
-        "y": 1347,
+        "x": 1032,
+        "y": 1287,
         "wires": [
             [
-                "db4ca095b9d8c77f",
-                "135fbad931b858ee"
+                "867de237489e3e74",
+                "378298023d9b066d"
             ]
         ]
     },
     {
-        "id": "d49c74d90c23291b",
+        "id": "ae99b56716904e59",
         "type": "ui_worldmap",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "order": 20,
         "width": 17,
@@ -274,14 +980,14 @@
         "mapurl": "",
         "mapopt": "",
         "mapwms": false,
-        "x": 2472,
-        "y": 1307,
+        "x": 1612,
+        "y": 1247,
         "wires": []
     },
     {
-        "id": "db4ca095b9d8c77f",
+        "id": "867de237489e3e74",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare for GPS Map",
         "func": "// Iterate over each GPS data point\nfor (var i = 0; i < msg.payload.length; i++) {\n    var data = {\n        name:msg.payload[i].sensor_team +  \" point \" + (i + 1),     // Unique name for each point\n        lat: msg.payload[i].latitude, // Latitude of the point\n        lon: msg.payload[i].longitude // Longitude of the point\n        // Optionally, you can add more properties like icon and layer\n    };\n\n    // Emit each data point individually to the Worldmap node\n    node.send({\n        payload: data\n    });\n}\n\nreturn null; // Return null to suppress the original message\n",
         "outputs": 1,
@@ -290,18 +996,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2252,
-        "y": 1307,
+        "x": 1392,
+        "y": 1247,
         "wires": [
             [
-                "d49c74d90c23291b"
+                "ae99b56716904e59"
             ]
         ]
     },
     {
-        "id": "135fbad931b858ee",
+        "id": "378298023d9b066d",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "distance calculation",
         "func": "var gpsData = msg.payload;\nvar selectedTeam = global.get('selectedTeam');\nvar teamDistances = {};\nvar totalDistance = 0;\n\n// Helper function to calculate distance using Haversine formula\nfunction haversineDistance(lat1, lon1, lat2, lon2) {\n    var R = 6371000; // Radius of the Earth in meters\n    var phi1 = toRadians(lat1);\n    var phi2 = toRadians(lat2);\n    var deltaPhi = toRadians(lat2 - lat1);\n    var deltaLambda = toRadians(lon2 - lon1);\n\n    var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +\n        Math.cos(phi1) * Math.cos(phi2) *\n        Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);\n    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n\n    return R * c; // Distance in meters\n}\n\nfunction toRadians(degrees) {\n    return degrees * Math.PI / 180;\n}\n\n// Process distances based on the selected team\nif (selectedTeam !== \"all\") {\n    // Calculate distance for the selected team only\n    for (var i = 1; i < gpsData.length; i++) {\n        var prevPoint = gpsData[i - 1];\n        var currPoint = gpsData[i];\n\n        var distance = haversineDistance(prevPoint.latitude, prevPoint.longitude, currPoint.latitude, currPoint.longitude);\n        totalDistance += distance;\n    }\n    totalDistance = totalDistance / 1000; // Convert to kilometers\n    msg.payload = totalDistance.toFixed(2) + \" km\"; // Format the payload as a string with two decimal places\n\n} else {\n    // Group data by sensor_team and calculate distances\n    gpsData.forEach(function(data) {\n        if (!teamDistances[data.sensor_team]) {\n            teamDistances[data.sensor_team] = 0;\n        }\n    });\n\n    for (var team in teamDistances) {\n        var teamData = gpsData.filter(point => point.sensor_team === team);\n        var teamDistance = 0;\n\n        for (var i = 1; i < teamData.length; i++) {\n            var prevPoint = teamData[i - 1];\n            var currPoint = teamData[i];\n\n            var distance = haversineDistance(prevPoint.latitude, prevPoint.longitude, currPoint.latitude, currPoint.longitude);\n            teamDistance += distance;\n        }\n\n        teamDistances[team] = teamDistance / 1000; // Convert to kilometers\n        totalDistance += teamDistances[team]; // Sum up the distance for all teams\n    }\n\n    msg.payload = totalDistance.toFixed(2) + \" km\"; // Format as a string with two decimal places\n}\n\nreturn msg;\n",
         "outputs": 1,
@@ -310,18 +1016,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2232,
-        "y": 1367,
+        "x": 1372,
+        "y": 1307,
         "wires": [
             [
-                "3c8e0af6be7a4ad7"
+                "33bcc76fc5c41f54"
             ]
         ]
     },
     {
-        "id": "3c8e0af6be7a4ad7",
+        "id": "33bcc76fc5c41f54",
         "type": "ui_text",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "order": 22,
         "width": 7,
@@ -335,14 +1041,14 @@
         "font": "",
         "fontSize": 16,
         "color": "#000000",
-        "x": 2532,
-        "y": 1367,
+        "x": 1672,
+        "y": 1307,
         "wires": []
     },
     {
-        "id": "bafedcbb1e1df395",
+        "id": "f575363abf5ec4cf",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "parse vital data",
         "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\nvar selectedTeam = global.get('selectedTeam');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV, starting from the second line to skip the header\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,timestampRegular,sensor_id,sensor_team,heart_rate,body_temperature\n    data.timestamp = values[0].trim();\n    data.timestampRegular = parseInt(values[1].trim(), 10); // Assuming timestampRegular is an integer\n    data.sensor_id = values[2].trim();\n    data.sensor_team = values[3].trim();\n    data.heart_rate = parseInt(values[4].trim(), 10);\n    data.body_temperature = parseFloat(values[5].trim());\n\n    // Check for valid heart_rate and body_temperature values\n    if (!isNaN(data.heart_rate) && !isNaN(data.body_temperature)) {\n        if (selectedTeam !== \"all\" && selectedTeam != null && selectedTeam != undefined) {\n            if (data.sensor_team === selectedTeam) {\n                processedData.push(data);\n            }\n        } else {\n            processedData.push(data);\n        }\n    }\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\nreturn msg;\n",
         "outputs": 1,
@@ -351,20 +1057,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1860,
-        "y": 1540,
+        "x": 1000,
+        "y": 1480,
         "wires": [
             [
-                "07eb4c88b04909ae",
-                "3297243c9af3c064",
-                "bbf6f053d0635e97"
+                "a0e466d737dd40c0",
+                "65916418146730bd",
+                "162cbfc9ef5716e7"
             ]
         ]
     },
     {
-        "id": "07eb4c88b04909ae",
+        "id": "a0e466d737dd40c0",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare heart rate for line chart",
         "func": "var processedData = msg.payload;\n\n// Initialize arrays to hold the data for the heart rate chart\nvar heartRateData = [];\n\n// Iterate over the processed data to extract timestamp and heart rate\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Prepare data for heart rate chart\n    heartRateData.push({\n        x: new Date(data.timestamp),\n        y: data.heart_rate\n    });\n}\n\n// Set the processed heart rate data as the message payload\nmsg.payload = [{\n    series: [\"Heart Rate\"],\n    data: [heartRateData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
         "outputs": 1,
@@ -373,21 +1079,21 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2252,
-        "y": 1494,
+        "x": 1392,
+        "y": 1434,
         "wires": [
             [
-                "9507e7ac96b60fd5"
+                "dd168695dfdfb5ea"
             ]
         ]
     },
     {
-        "id": "9507e7ac96b60fd5",
+        "id": "dd168695dfdfb5ea",
         "type": "ui_chart",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "",
         "group": "7b778c48129e069b",
-        "order": 28,
+        "order": 29,
         "width": 8,
         "height": 8,
         "label": "heart rate chart",
@@ -419,16 +1125,16 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 2532,
-        "y": 1494,
+        "x": 1672,
+        "y": 1434,
         "wires": [
             []
         ]
     },
     {
-        "id": "3297243c9af3c064",
+        "id": "65916418146730bd",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare body temprature for line chart",
         "func": "var processedData = msg.payload;\n\n// Initialize array to hold the data for the body temperature chart\nvar bodyTemperatureData = [];\n\n// Iterate over the processed data to extract timestamp and body temperature\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Prepare data for body temperature chart\n    bodyTemperatureData.push({\n        x: new Date(data.timestamp),\n        y: data.body_temperature\n    });\n}\n\n// Set the processed body temperature data as the message payload\nmsg.payload = [{\n    series: [\"Body Temperature\"],\n    data: [bodyTemperatureData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
         "outputs": 1,
@@ -437,21 +1143,21 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2292,
-        "y": 1554,
+        "x": 1432,
+        "y": 1494,
         "wires": [
             [
-                "abbe8434834e679d"
+                "566f3102e02b52cf"
             ]
         ]
     },
     {
-        "id": "abbe8434834e679d",
+        "id": "566f3102e02b52cf",
         "type": "ui_chart",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "",
         "group": "7b778c48129e069b",
-        "order": 30,
+        "order": 28,
         "width": 8,
         "height": 8,
         "label": "body temprature chart",
@@ -483,16 +1189,16 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 2620,
-        "y": 1560,
+        "x": 1760,
+        "y": 1500,
         "wires": [
             []
         ]
     },
     {
-        "id": "bbf6f053d0635e97",
+        "id": "162cbfc9ef5716e7",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "statistical analysis for vital data",
         "func": "var processedData = msg.payload;\n\n// Initialize arrays to hold heart rate and body temperature data\nvar heartRates = [];\nvar bodyTemperatures = [];\n\n// Iterate over processed data to extract heart rates and body temperatures\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Check if heart_rate is a valid number before collecting it\n    if (!isNaN(data.heart_rate)) {\n        heartRates.push(data.heart_rate);\n    }\n\n    // Check if body_temperature is a valid number before collecting it\n    if (!isNaN(data.body_temperature)) {\n        bodyTemperatures.push(data.body_temperature);\n    }\n}\n\n// Calculate average heart rate if the array is not empty\nvar averageHeartRate = heartRates.length > 0 ? \n    (heartRates.reduce((acc, val) => acc + val, 0) / heartRates.length).toFixed(2) : \n    \"N/A\";\n\n// Calculate maximum and minimum heart rate if the array is not empty\nvar maxHeartRate = heartRates.length > 0 ? Math.max(...heartRates) : \"N/A\";\nvar minHeartRate = heartRates.length > 0 ? Math.min(...heartRates) : \"N/A\";\n\n// Calculate average body temperature if the array is not empty\nvar averageBodyTemperature = bodyTemperatures.length > 0 ? \n    (bodyTemperatures.reduce((acc, val) => acc + val, 0) / bodyTemperatures.length).toFixed(2) : \n    \"N/A\";\n\n// Calculate maximum and minimum body temperature if the array is not empty\nvar maxBodyTemperature = bodyTemperatures.length > 0 ? Math.max(...bodyTemperatures).toFixed(2) : \"N/A\";\nvar minBodyTemperature = bodyTemperatures.length > 0 ? Math.min(...bodyTemperatures).toFixed(2) : \"N/A\";\n\n// Prepare the payload with calculated statistics\nmsg.payload = {\n    averageHeartRate: averageHeartRate,\n    maxHeartRate: maxHeartRate,\n    minHeartRate: minHeartRate,\n    averageBodyTemperature: averageBodyTemperature,\n    maxBodyTemperature: maxBodyTemperature,\n    minBodyTemperature: minBodyTemperature\n};\n\nreturn msg;\n",
         "outputs": 1,
@@ -501,18 +1207,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2252,
-        "y": 1614,
+        "x": 1392,
+        "y": 1554,
         "wires": [
             [
-                "5633e3834f8abdcd"
+                "b0af556aee077223"
             ]
         ]
     },
     {
-        "id": "5633e3834f8abdcd",
+        "id": "b0af556aee077223",
         "type": "ui_template",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "name": "vital data statistical analysis template",
         "order": 39,
@@ -524,16 +1230,16 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 2672,
-        "y": 1614,
+        "x": 1812,
+        "y": 1554,
         "wires": [
             []
         ]
     },
     {
-        "id": "6318fb4145dd0677",
+        "id": "73803b43439c2e42",
         "type": "ui_dropdown",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "",
         "label": "Select Team",
         "tooltip": "",
@@ -570,18 +1276,18 @@
         "topic": "payload",
         "topicType": "msg",
         "className": "",
-        "x": 1030,
-        "y": 1420,
+        "x": 170,
+        "y": 1360,
         "wires": [
             [
-                "6375bf6824bcf6c9"
+                "1d20f1661fd8980e"
             ]
         ]
     },
     {
-        "id": "6375bf6824bcf6c9",
+        "id": "1d20f1661fd8980e",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "save selected team to global context",
         "func": "// Function node to handle team selection from the dropdown\nvar teamId = msg.payload;\nglobal.set(\"selectedTeam\", teamId);\nreturn msg;\n",
         "outputs": 1,
@@ -590,18 +1296,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1040,
-        "y": 1480,
+        "x": 180,
+        "y": 1420,
         "wires": [
             [
-                "e2d083dea599844a"
+                "25f3859d0148182e"
             ]
         ]
     },
     {
-        "id": "e2d083dea599844a",
+        "id": "25f3859d0148182e",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "get selected team from global context",
         "func": "var teamId = global.get(\"selectedTeam\");\nmsg.payload = teamId;\nreturn msg;",
         "outputs": 1,
@@ -610,18 +1316,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1040,
-        "y": 1540,
+        "x": 180,
+        "y": 1480,
         "wires": [
             [
-                "3b6bb04edc371c59"
+                "a12504052e884d3b"
             ]
         ]
     },
     {
-        "id": "3b6bb04edc371c59",
+        "id": "a12504052e884d3b",
         "type": "trigger",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "Trigger reading on team change",
         "op1": "0",
         "op2": "0",
@@ -635,21 +1341,21 @@
         "bytopic": "all",
         "topic": "topic",
         "outputs": 1,
-        "x": 1040,
-        "y": 1600,
+        "x": 180,
+        "y": 1540,
         "wires": [
             [
-                "861a5d01c5ee7bc9",
-                "48af1a0b23696310",
-                "2d93256896aeb310",
-                "41337f3fa3ad0144"
+                "5326843d9372bdf2",
+                "1f27bcdf443f90d5",
+                "98e02d176fde93ed",
+                "47c585d40b059aa3"
             ]
         ]
     },
     {
-        "id": "41337f3fa3ad0144",
+        "id": "47c585d40b059aa3",
         "type": "file in",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "read speed",
         "filename": "/home/musse/Documents/Class/IOT/Final Project/IoT-Sensor-Data-Processing-NodeRED/batch/speed_data.csv",
         "filenameType": "str",
@@ -658,18 +1364,18 @@
         "sendError": false,
         "encoding": "utf8",
         "allProps": false,
-        "x": 1632,
-        "y": 1740,
+        "x": 772,
+        "y": 1680,
         "wires": [
             [
-                "8e706ded556eeb16"
+                "ca76e4cdb83deba5"
             ]
         ]
     },
     {
-        "id": "8e706ded556eeb16",
+        "id": "ca76e4cdb83deba5",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "parse speed data",
         "func": "var csvData = msg.payload;\nvar lines = csvData.split('\\n');\nvar selectedTeam = global.get('selectedTeam');\n\n// Initialize an array to hold the processed data\nvar processedData = [];\n\n// Iterate over each line of the CSV, starting from the second line to skip the header\nfor (var i = 1; i < lines.length; i++) {\n    var line = lines[i].trim();\n    if (line === '') continue; // Skip empty lines\n\n    var values = line.split(',');\n    var data = {};\n\n    // Assuming the CSV format: timestamp,timestampRegular,sensor_id,sensor_team,speed\n    data.timestamp = values[0].trim();\n    data.timestampRegular = parseInt(values[1].trim(), 10); // Assuming timestampRegular is an integer\n    data.sensor_id = values[2].trim();\n    data.sensor_team = values[3].trim();\n    data.speed = parseFloat(values[4].trim());\n\n    // Validate the parsed values\n    if (!isNaN(data.timestampRegular) && !isNaN(data.speed)) {\n        if (selectedTeam !== \"all\" && selectedTeam != null && selectedTeam != undefined) {\n            if (data.sensor_team === selectedTeam) {\n                processedData.push(data);\n            }\n        } else {\n            processedData.push(data);\n        }\n    }\n}\n\n// Set the processed data as the message payload\nmsg.payload = processedData;\n\nreturn msg;\n",
         "outputs": 1,
@@ -678,21 +1384,21 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 1912,
-        "y": 1740,
+        "x": 1052,
+        "y": 1680,
         "wires": [
             [
-                "aec31943a94c1e44",
-                "2750d810de9eeb09",
-                "8616d0e8f945063d",
-                "89378a191534646a"
+                "f29d20d412d11376",
+                "8a2537b5109eef95",
+                "d00f5eec2b360770",
+                "c5ced849aaaa7b10"
             ]
         ]
     },
     {
-        "id": "aec31943a94c1e44",
+        "id": "f29d20d412d11376",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "calculate basic speed statistics",
         "func": "var speedData = msg.payload;\n\n// Initialize variables for calculations\nvar sumSpeed = 0;\nvar maxSpeed = -Infinity;\nvar minSpeed = Infinity;\nvar speedValues = [];\n\n// Iterate over speed data to collect statistics\nfor (var i = 0; i < speedData.length; i++) {\n    var speed = speedData[i].speed;\n\n    // Sum for average calculation\n    sumSpeed += speed;\n\n    // Check for max speed\n    if (speed > maxSpeed) {\n        maxSpeed = speed;\n    }\n\n    // Check for min speed\n    if (speed < minSpeed) {\n        minSpeed = speed;\n    }\n\n    // Collect speeds for standard deviation calculation\n    speedValues.push(speed);\n}\n\n// Calculate average speed\nvar averageSpeed = sumSpeed / speedData.length;\n\n// Calculate standard deviation\nvar mean = averageSpeed;\nvar sumSquaredDiffs = speedValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0);\nvar standardDeviation = Math.sqrt(sumSquaredDiffs / speedValues.length);\n\n// Prepare the payload with calculated statistics\nmsg.payload = {\n    averageSpeed: averageSpeed.toFixed(2),\n    maxSpeed: maxSpeed.toFixed(2),\n    minSpeed: minSpeed.toFixed(2),\n    standardDeviation: standardDeviation.toFixed(2)\n};\n\nreturn msg;\n",
         "outputs": 1,
@@ -701,18 +1407,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2272,
-        "y": 1777,
+        "x": 1412,
+        "y": 1717,
         "wires": [
             [
-                "d55dbc83e70ba5ef"
+                "435ecdb025e4ec58"
             ]
         ]
     },
     {
-        "id": "2750d810de9eeb09",
+        "id": "8a2537b5109eef95",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare speed for line chart",
         "func": "var processedData = msg.payload;\n\n// Initialize an array to hold the data for the speed chart\nvar speedData = [];\n\n// Iterate over the processed data to extract timestamp and speed\nfor (var i = 0; i < processedData.length; i++) {\n    var data = processedData[i];\n\n    // Prepare data for speed chart\n    speedData.push({\n        x: new Date(data.timestamp),\n        y: data.speed\n    });\n}\n\n// Set the processed speed data as the message payload\nmsg.payload = [{\n    series: [\"Speed\"],\n    data: [speedData],\n    labels: [\"\"]\n}];\n\nreturn msg;\n",
         "outputs": 1,
@@ -721,18 +1427,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2260,
-        "y": 1720,
+        "x": 1400,
+        "y": 1660,
         "wires": [
             [
-                "65859024cc07bc4c"
+                "c6f8093938b04420"
             ]
         ]
     },
     {
-        "id": "65859024cc07bc4c",
+        "id": "c6f8093938b04420",
         "type": "ui_chart",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "",
         "group": "7b778c48129e069b",
         "order": 19,
@@ -767,16 +1473,16 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 2512,
-        "y": 1717,
+        "x": 1652,
+        "y": 1657,
         "wires": [
             []
         ]
     },
     {
-        "id": "d55dbc83e70ba5ef",
+        "id": "435ecdb025e4ec58",
         "type": "ui_template",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "name": "speed statistics template",
         "order": 17,
@@ -788,16 +1494,16 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 2610,
-        "y": 1780,
+        "x": 1750,
+        "y": 1720,
         "wires": [
             []
         ]
     },
     {
-        "id": "8616d0e8f945063d",
+        "id": "d00f5eec2b360770",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "average speed by hour",
         "func": "var speedData = msg.payload;\nvar hourlySpeeds = {};\n\n// Aggregate speeds by hour\nfor (var i = 0; i < speedData.length; i++) {\n    var timestamp = new Date(speedData[i].timestamp);\n    var hour = timestamp.getUTCHours();\n    if (!hourlySpeeds[hour]) {\n        hourlySpeeds[hour] = { sumSpeed: 0, count: 0 };\n    }\n    hourlySpeeds[hour].sumSpeed += speedData[i].speed;\n    hourlySpeeds[hour].count += 1;\n}\n\n// Calculate average speed for each hour\nvar averageHourlySpeeds = [];\nfor (var hourStr in hourlySpeeds) {\n    var hour = parseInt(hourStr); // Ensure hour is treated as a number\n    var avgSpeed = hourlySpeeds[hour].sumSpeed / hourlySpeeds[hour].count;\n    averageHourlySpeeds.push({ hour: hour, averageSpeed: avgSpeed.toFixed(2) });\n}\n\n// Set the average hourly speeds as the message payload\nmsg.payload = averageHourlySpeeds;\n\nreturn msg;\n",
         "outputs": 1,
@@ -806,18 +1512,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2240,
-        "y": 1840,
+        "x": 1380,
+        "y": 1780,
         "wires": [
             [
-                "e196c58d33c98de9"
+                "9c2f356668a5a745"
             ]
         ]
     },
     {
-        "id": "e196c58d33c98de9",
+        "id": "9c2f356668a5a745",
         "type": "ui_template",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "name": "average speed by hour template",
         "order": 18,
@@ -829,16 +1535,16 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 2640,
-        "y": 1840,
+        "x": 1780,
+        "y": 1780,
         "wires": [
             []
         ]
     },
     {
-        "id": "89378a191534646a",
+        "id": "c5ced849aaaa7b10",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "activity recognition (threshold-based)",
         "func": "// Function node for activity recognition (threshold-based)\nvar data = msg.payload;\n\n// Initialize counters for each activity\nvar walkingCount = 0;\nvar runningCount = 0;\nvar sprintingCount = 0;\n\n// Realistic thresholds based on typical speed ranges (m/s)\nvar walkingThreshold = 8;  // Speed < 8 m/s for walking\nvar runningThreshold = 16;  // Speed between 8 and 16 m/s for running\n\nfor (var i = 0; i < data.length; i++) {\n    var speed = parseFloat(data[i].speed);\n    \n    // Classify activities based on thresholds\n    if (speed < walkingThreshold) {\n        data[i].activity = \"Walking\";\n        walkingCount++;\n    } else if (speed >= walkingThreshold && speed < runningThreshold) {\n        data[i].activity = \"Running\";\n        runningCount++;\n    } else {\n        data[i].activity = \"Sprinting\";\n        sprintingCount++;\n    }\n}\n\n// Calculate percentages\nvar totalCount = walkingCount + runningCount + sprintingCount;\nvar walkingPercentage = (totalCount > 0) ? (walkingCount / totalCount) * 100 : 0;\nvar runningPercentage = (totalCount > 0) ? (runningCount / totalCount) * 100 : 0;\nvar sprintingPercentage = (totalCount > 0) ? (sprintingCount / totalCount) * 100 : 0;\n\n// Add the counts and percentages to the message payload\nmsg.payload = {\n    data: data,\n    counts: {\n        walking: walkingCount,\n        running: runningCount,\n        sprinting: sprintingCount\n    },\n    percentages: {\n        walking: walkingPercentage.toFixed(2),\n        running: runningPercentage.toFixed(2),\n        sprinting: sprintingPercentage.toFixed(2)\n    }\n};\n\nreturn msg;\n",
         "outputs": 1,
@@ -847,20 +1553,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2320,
-        "y": 1980,
+        "x": 1460,
+        "y": 1920,
         "wires": [
             [
-                "2ce285c31b9fb361",
-                "7d7031f76e929164",
-                "3ff2ba55739d7b15"
+                "627c6aa9c5ef97cd",
+                "734984461c5b0565",
+                "98956fd503566c85"
             ]
         ]
     },
     {
-        "id": "31c65fc56e5608fc",
+        "id": "ab51d3c2f2628f61",
         "type": "ui_chart",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "speed activity distribution",
         "group": "7b778c48129e069b",
         "order": 16,
@@ -895,16 +1601,16 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 3028,
-        "y": 1980,
+        "x": 2168,
+        "y": 1920,
         "wires": [
             []
         ]
     },
     {
-        "id": "3ff2ba55739d7b15",
+        "id": "98956fd503566c85",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare sprinting data for pie chart",
         "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.sprinting;\nmsg.topic = \"Sprinting\";\n\nreturn msg;\n",
         "outputs": 1,
@@ -913,18 +1619,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2680,
-        "y": 2040,
+        "x": 1820,
+        "y": 1980,
         "wires": [
             [
-                "31c65fc56e5608fc"
+                "ab51d3c2f2628f61"
             ]
         ]
     },
     {
-        "id": "2ce285c31b9fb361",
+        "id": "627c6aa9c5ef97cd",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare walking data for pie chart",
         "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.walking;\nmsg.topic = \"Walking\";\n\nreturn msg;\n",
         "outputs": 1,
@@ -933,18 +1639,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2680,
-        "y": 1920,
+        "x": 1820,
+        "y": 1860,
         "wires": [
             [
-                "31c65fc56e5608fc"
+                "ab51d3c2f2628f61"
             ]
         ]
     },
     {
-        "id": "7d7031f76e929164",
+        "id": "734984461c5b0565",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "prepare running data for pie chart",
         "func": "// Function node to prepare data for the pie chart\nvar percentages = msg.payload.percentages;\n\nmsg.payload = percentages.running;\nmsg.topic = \"Running\";\n\nreturn msg;\n",
         "outputs": 1,
@@ -953,18 +1659,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2680,
-        "y": 1980,
+        "x": 1820,
+        "y": 1920,
         "wires": [
             [
-                "31c65fc56e5608fc"
+                "ab51d3c2f2628f61"
             ]
         ]
     },
     {
-        "id": "c7d6842a4194c974",
+        "id": "444e5a1915c573e0",
         "type": "function",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "statstical analysis for acceleration data",
         "func": "// Function node for statistical analysis\nvar data = msg.payload;\n\n// Helper function to calculate median\nfunction median(values) {\n    if (values.length === 0) return 0;\n    values.sort(function(a, b) {\n        return a - b;\n    });\n    var half = Math.floor(values.length / 2);\n    if (values.length % 2) {\n        return values[half];\n    } else {\n        return (values[half - 1] + values[half]) / 2.0;\n    }\n}\n\n// Initialize arrays to hold values for each axis and magnitude\nvar xValues = [];\nvar yValues = [];\nvar zValues = [];\nvar magnitudeValues = [];\n\n// Populate arrays with data\nfor (var i = 0; i < data.length; i++) {\n    xValues.push(data[i].x);\n    yValues.push(data[i].y);\n    zValues.push(data[i].z);\n    magnitudeValues.push(data[i].magnitude);\n}\n\n// Function to calculate mean\nfunction mean(values) {\n    var sum = values.reduce((a, b) => a + b, 0);\n    return sum / values.length;\n}\n\n// Function to calculate variance\nfunction variance(values, meanValue) {\n    return values.reduce((a, b) => a + Math.pow(b - meanValue, 2), 0) / values.length;\n}\n\n// Calculate statistics for each axis and magnitude\nvar meanX = mean(xValues);\nvar meanY = mean(yValues);\nvar meanZ = mean(zValues);\nvar meanMagnitude = mean(magnitudeValues);\n\nvar varianceX = variance(xValues, meanX);\nvar varianceY = variance(yValues, meanY);\nvar varianceZ = variance(zValues, meanZ);\nvar varianceMagnitude = variance(magnitudeValues, meanMagnitude);\n\nvar stdDevX = Math.sqrt(varianceX);\nvar stdDevY = Math.sqrt(varianceY);\nvar stdDevZ = Math.sqrt(varianceZ);\nvar stdDevMagnitude = Math.sqrt(varianceMagnitude);\n\nvar medianX = median(xValues);\nvar medianY = median(yValues);\nvar medianZ = median(zValues);\nvar medianMagnitude = median(magnitudeValues);\n\n// Add statistics to the message payload\nmsg.payload = {\n    mean: {\n        x: meanX.toFixed(2),\n        y: meanY.toFixed(2),\n        z: meanZ.toFixed(2),\n        magnitude: meanMagnitude.toFixed(2)\n    },\n    median: {\n        x: medianX.toFixed(2),\n        y: medianY.toFixed(2),\n        z: medianZ.toFixed(2),\n        magnitude: medianMagnitude.toFixed(2)\n    },\n    variance: {\n        x: varianceX.toFixed(2),\n        y: varianceY.toFixed(2),\n        z: varianceZ.toFixed(2),\n        magnitude: varianceMagnitude.toFixed(2)\n    },\n    stdDev: {\n        x: stdDevX.toFixed(2),\n        y: stdDevY.toFixed(2),\n        z: stdDevZ.toFixed(2),\n        magnitude: stdDevMagnitude.toFixed(2)\n    }\n};\n\nreturn msg;\n",
         "outputs": 1,
@@ -973,18 +1679,18 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 2330,
-        "y": 1180,
+        "x": 1470,
+        "y": 1120,
         "wires": [
             [
-                "6e487f9d522263e5"
+                "41fa40897d6d6c57"
             ]
         ]
     },
     {
-        "id": "6e487f9d522263e5",
+        "id": "41fa40897d6d6c57",
         "type": "ui_template",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "group": "7b778c48129e069b",
         "name": "",
         "order": 15,
@@ -996,840 +1702,148 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 2592,
-        "y": 1180,
+        "x": 1732,
+        "y": 1120,
         "wires": [
             []
         ]
     },
     {
-        "id": "75a098da8cae4bd5",
-        "type": "mqtt in",
-        "z": "bd9b790564293dee",
-        "name": "",
-        "topic": "team/sensors",
-        "qos": "0",
-        "datatype": "auto-detect",
-        "broker": "37464be6e8cb6157",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 1030,
-        "y": 460,
-        "wires": [
-            [
-                "c1134f93c275ef20",
-                "6c983c8d0b98213d",
-                "46ccefcb14ac4528",
-                "7c7ad177432a0b48",
-                "5106480d33018e4c",
-                "66adfc94d5585d31",
-                "90cda6ea9dcab6f1"
-            ]
-        ]
-    },
-    {
-        "id": "c1134f93c275ef20",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Hot Path Heartrate",
-        "func": "\nvar teamId = global.get(\"selectedTeam\");\n\nif (msg.payload.sensor_type === \"vital_parameters\") {\n\nif(msg.payload.sensor_team === teamId && teamId !== \"all\"){\n    const { heart_rate, body_temperature } = msg.payload.data;\n\n    var average = calculateAverage(heart_rate);\n\n    if (heart_rate > 100 || body_temperature > 37.5) {\n        node.warn(\"Heart Rate: critical, value: \"+ heart_rate);\n        msg.payload = {\n            status: \"high\",\n            heart_rate: heart_rate,\n            average : average\n        };   return msg;\n    }else{\n        msg.payload = {\n            status: \"normal\",\n            heart_rate: heart_rate,\n            average : average\n        }; \n        \n          return msg;\n    }\n}else if(teamId === \"all\"){\n   let heart_rate1 = context.get('HRTeam1') || 0;\n   let heart_rate2 = context.get('HRTeam2') || 0;\n   let heart_rate3 = context.get('HRTeam3') || 0;\n\n    if(msg.payload.sensor_team === \"team_1\"){\n        heart_rate1 = msg.payload.data.heart_rate;\n        context.set('HRTeam1', heart_rate1);\n    }\n    if(msg.payload.sensor_team === \"team_2\"){\n        heart_rate2 = msg.payload.data.heart_rate;\n        context.set('HRTeam2', heart_rate2);\n    }\n    if(msg.payload.sensor_team === \"team_3\"){\n        heart_rate3 = msg.payload.data.heart_rate;\n        context.set('HRTeam3', heart_rate3);\n\n    }\n\n    const heart_rate = ((heart_rate1 +  heart_rate2 + heart_rate3)/3).toFixed(2);\n    var average = calculateAverage(heart_rate);\n    msg.payload = {\n        status : \"combined values\",\n        heart_rate : heart_rate,\n        average : average,\n        };\n    return msg;\n}\n\nfunction calculateAverage(heart_rate){\n    var values = context.get('values') || [];\n     var sum = context.get('sum') || 0;\n \nvar value = parseFloat(heart_rate);\n\nif (!isNaN(value)) {\n    values.push(value)\n    sum += value;\n\n    if (values.length > 10) {\n        var removedValue = values.shift();\n        sum -= removedValue;\n    }\n\n    var average = (sum / values.length).toFixed(2);\n\n    context.set('values', values);\n    context.set('sum', sum);\n    return average;\n    } \n}\n}\n\n\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1450,
-        "y": 240,
-        "wires": [
-            [
-                "dc02d7182dc7e9f5",
-                "bdc7b9101b33f80a",
-                "37a710e6f7d16abd",
-                "c0335031b12adae7"
-            ]
-        ]
-    },
-    {
-        "id": "6c983c8d0b98213d",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Hot Path Body Temperature",
-        "func": "var teamId = global.get(\"selectedTeam\");\n\n\nif (msg.payload.sensor_type === \"vital_parameters\") {\n\nif(msg.payload.sensor_team === teamId && teamId !== \"all\"){\n\n    const { heart_rate, body_temperature } = msg.payload.data;\n    var average = calculateAverage(body_temperature);\n    \n    if ( body_temperature > 38) {\n        node.warn(\"Anomaly detected:\"+ msg.payload);\n     msg.payload = {\n            status: \"High\",\n            body_temperature: body_temperature,\n            average: average\n        };   return msg;\n    }else{\n        msg.payload = {\n            status: \"normal\",\n            body_temperature: body_temperature,\n            average : average\n        };   return msg;\n    }\n    \n} else if (teamId === \"all\") {\n    let body_temperature1 = context.get('BRTeam1') || 0;\n    let body_temperature2 = context.get('BRTeam2') || 0;\n    let body_temperature3 = context.get('BRTeam3') || 0;\n\n    if (msg.payload.sensor_team === \"team_1\") {\n        body_temperature1 = msg.payload.data.body_temperature;\n        context.set('BRTeam1', body_temperature1);\n    }\n    if (msg.payload.sensor_team === \"team_2\") {\n        body_temperature2 = msg.payload.data.body_temperature;\n        context.set('BRTeam2', body_temperature2);\n    }\n    if (msg.payload.sensor_team === \"team_3\") {\n        body_temperature3 = msg.payload.data.body_temperature;\n        context.set('BRTeam3', body_temperature3);\n\n    }\n\n    const body_temperature = ((body_temperature1 + body_temperature2 + body_temperature3) / 3).toFixed(2);\n    var average = calculateAverage(body_temperature);\n    msg.payload = {\n        status: \"combined values\",\n        body_temperature: body_temperature,\n        average: average\n    };\n    return msg;\n}\n\nfunction calculateAverage(body_temperature){\n    var values = context.get('values') || [];\n    var sum = context.get('sum') || 0;\n\n    var value = parseFloat(body_temperature);\n\n    if (!isNaN(value)) {\n        values.push(value)\n        sum += value;\n\n        if (values.length > 10) {\n            var removedValue = values.shift();\n            sum -= removedValue;\n        }\n\n        var average = (sum / values.length).toFixed(2);\n\n        context.set('values', values);\n        context.set('sum', sum);\n        return average;\n    }\n\n}\n}\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1460,
-        "y": 400,
-        "wires": [
-            [
-                "2a0ceef6d442272c",
-                "886e2094b9e13c5b",
-                "c39de9d06d045425"
-            ]
-        ]
-    },
-    {
-        "id": "46ccefcb14ac4528",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Hot Path Position",
-        "func": "// Retrieve the teamId from the global context\nvar teamId = global.get(\"selectedTeam\");\nvar previousTeamId = context.get(\"previousTeamId\");\n\n\n\nvar deletePayloads = [];\nvar updatePayload = null;\n\n// Function to add a deletion message\nfunction addDeletePayload(name) {\n    deletePayloads.push({\n        name: name,\n        deleted: true\n    });\n}\n\n// Handle incoming payload\nif (msg.payload.sensor_type === \"position\") {\n    // Handle the case where 'all' was previously selected\n    if (previousTeamId === \"all\" && teamId !== \"all\") {\n        // If switching from \"all\" to a specific team, delete all previous team markers\n        [\"team_1\", \"team_2\", \"team_3\"].forEach(team => {\n            if (team !== teamId) {\n                addDeletePayload(team);\n            }\n        });\n    }\n\n    // Handle the case where 'all' is currently selected\n    if (teamId === \"all\") {\n        // Add/update markers for all teams\n        updatePayload = {\n            name: msg.payload.sensor_team,\n            lat: msg.payload.data.latitude,\n            lon: msg.payload.data.longitude\n        };\n    } else if (teamId !== \"all\" && msg.payload.sensor_team === teamId) {\n        // Add/update marker for the selected team\n        updatePayload = {\n            name: teamId,\n            lat: msg.payload.data.latitude,\n            lon: msg.payload.data.longitude,\n            altitude: msg.payload.data.altitude\n        };\n    }\n}\n\n// Handle the case where switching from a specific team to another\nif (previousTeamId !== \"all\" && previousTeamId !== teamId && teamId !== \"all\") {\n    addDeletePayload(previousTeamId);\n}\n\n// Update the context with the current teamId\ncontext.set(\"previousTeamId\", teamId);\n\n// Construct the output payload\nmsg.payload = deletePayloads;\nif (updatePayload) {\n    msg.payload.push(updatePayload);\n}\n\nif(msg.payload.length>0){\n    return msg;\n}else{\n    return null;\n}\n\n// Return the constructed payload array\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1450,
-        "y": 600,
-        "wires": [
-            [
-                "3431e4157869be03",
-                "ad3794bf5408c57b"
-            ]
-        ],
-        "info": "// Retrieve the teamId from the global context\r\nvar teamId = global.get(\"selectedTeam\");\r\nvar previousTeamId = context.get(\"previousTeamId\");\r\n\r\n// Debugging output\r\nnode.warn(`Current teamId: ${teamId}`);\r\nnode.warn(`Previous teamId: ${previousTeamId}`);\r\n\r\nvar deletePayload = null;\r\nvar updatePayload = null;\r\n\r\n// Handle incoming payload\r\nif (msg.payload.sensor_type === \"position\") {\r\n    if (teamId !== \"all\" && msg.payload.sensor_team === teamId) {\r\n        // Prepare update payload for the selected team\r\n        const { latitude, longitude, altitude } = msg.payload.data;\r\n        updatePayload = {\r\n            name: teamId,\r\n            lat: latitude,\r\n            lon: longitude,\r\n            altitude: altitude\r\n        };\r\n    } else if (teamId === \"all\") {\r\n        // Prepare update payload for all teams\r\n        const { latitude, longitude } = msg.payload.data;\r\n        updatePayload = {\r\n            name: msg.payload.sensor_team,\r\n            lat: latitude,\r\n            lon: longitude\r\n        };\r\n    }\r\n}\r\n\r\n// Prepare delete payload if the teamId has changed\r\nif (previousTeamId && previousTeamId !== teamId) {\r\n    if(previousTeamId === \"all\" && teamId === \"team_1\"){\r\n        deletePayload = {\r\n            {name : previousTeamId}\r\n        }\r\n    }\r\n    deletePayload = {\r\n        name: previousTeamId,\r\n        deleted: true\r\n    };\r\n    node.warn(`Preparing to delete marker for team: ${previousTeamId}`);\r\n}\r\n\r\n// Update the context with the current teamId\r\ncontext.set(\"previousTeamId\", teamId);\r\n\r\n// Construct the output payload\r\nmsg.payload = [];\r\nif (deletePayload) {\r\n    msg.payload.push(deletePayload);\r\n}\r\nif (updatePayload) {\r\n    msg.payload.push(updatePayload);\r\n}\r\n\r\n// Return the constructed payload array\r\nreturn msg;"
-    },
-    {
-        "id": "7c7ad177432a0b48",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Hot Path Speed",
-        "func": "var teamId = global.get(\"selectedTeam\");\n\nif (msg.payload.sensor_type === \"speed\") {\nif (msg.payload.sensor_team === teamId && teamId !== \"all\") {\n\n\nconst speed = msg.payload.data.speed;\n    var averageSpeed = calculateAverage(speed);\n         \n    if (speed <= 7) {\n        msg.payload = {\n            activity: \"walking\",\n            speed: speed,\n            averageSpeed: averageSpeed\n        };\n        flow.set(\"dataWalking\", msg.payload);\n\n         //return msg;\n    } else if(speed > 7 && speed < 14) {\n        msg.payload = {\n            activity: \"running\",\n            speed: speed,\n            averageSpeed: averageSpeed\n        }; //return msg;\n    }else{\n        msg.payload = {\n            activity: \"sprinting\",\n            speed : speed,\n            averageSpeed: averageSpeed\n        }; //return msg;\n    }\n    flow.set(\"dataSpeed\", msg.payload);\n    return msg;\n    \n    }  else if (teamId === \"all\") {\n    let speed1 = context.get('speedTeam1') || 0;\n    let speed2 = context.get('speedTeam2') || 0;\n    let speed3 = context.get('speedTeam3') || 0;\n\n    if (msg.payload.sensor_team === \"team_1\") {\n        speed1 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam1', speed1);\n    }\n    if (msg.payload.sensor_team === \"team_2\") {\n        speed2 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam2', speed2);\n    }\n    if (msg.payload.sensor_team === \"team_3\") {\n        speed3 = parseFloat(msg.payload.data.speed);\n        context.set('speedTeam3', speed3);\n\n    }\n\n    var speed = ((speed1 + speed2 + speed3) / 3).toFixed(2);\n    var averageSpeed = calculateAverage(speed);\n    msg.payload = {\n        activity: \"combined activities\",\n        speed: speed,\n        averageSpeed: averageSpeed,\n       \n    };\n    return msg;\n}\n    function calculateAverage(speed){\n        var values = context.get('values') || [];\n        var sum = context.get('sum') || 0;\n\n        var value = parseFloat(speed);\n\n        if (!isNaN(value)) {\n            values.push(value)\n            sum += value;\n\n            if (values.length > 10) {\n                var removedValue = values.shift();\n                sum -= removedValue;\n            }\n\n            var averageSpeed = (sum / values.length).toFixed(2);\n\n            context.set('values', values);\n            context.set('sum', sum);\n            return averageSpeed;\n        }\n    }\n}\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1440,
-        "y": 740,
-        "wires": [
-            [
-                "6d08d7964ae6d04f",
-                "84de1f08d8e0cc61",
-                "09cde273084bf179",
-                "c0335031b12adae7"
-            ]
-        ]
-    },
-    {
-        "id": "5106480d33018e4c",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Hot Path Acceleration",
-        "func": "\n\nvar current_timestamp = msg.payload.timestampRegular;\nvar previous_velocityTeam1 = context.get('previous_velocityTeam1') || null;\nvar previous_velocityTeam2 = context.get('previous_velocityTeam2') || null;\nvar previous_velocityTeam3 = context.get('previous_velocityTeam3') || null;\nvar previous_timestampTeam1 = context.get('previous_timestampTeam1') || null;\nvar previous_timestampTeam2 = context.get('previous_timestampTeam2') || null;\nvar previous_timestampTeam3 = context.get('previous_timestampTeam3') || null;\nvar accelerationTeam1 = context.get('accelerationTeam3') || null;;\nvar accelerationTeam2 = context.get('accelerationTeam3') || null;;\nvar accelerationTeam3 = context.get('accelerationTeam3') || null;;\n\nvar teamId = global.get(\"selectedTeam\");\nlet current_velocityTeam1 = null;\nlet current_velocityTeam2 = null;\nlet current_velocityTeam3 = null;\n\n\nif (msg.payload.sensor_type === \"speed\") {\n     \nif(msg.payload.sensor_team === \"team_1\"){\n    current_velocityTeam1 = msg.payload.data.speed;\n\nif (previous_velocityTeam1 !== null && previous_timestampTeam1 !== null) {\n\n    var velocity = current_velocityTeam1 - previous_velocityTeam1;\n    var time = current_timestamp - previous_timestampTeam1;\n\n    // Check if delta_t is not zero to avoid division by zero\n    if (time !== 0) {\n        // Calculate acceleration\n        accelerationTeam1 = velocity / time;\n        context.set('accelerationTeam1', accelerationTeam1);\n        context.set('previous_velocityTeam1', current_velocityTeam1);\n        context.set('previous_timestampTeam1', current_timestamp);\n    } else {\n        return null; // Ignore the message if delta_t is zero\n    }\n} else {\n    // Initialize context variables if they are not set\n    context.set('previous_velocityTeam1', current_velocityTeam1);\n    context.set('previous_timestampTeam1', current_timestamp);\n    return null; // No acceleration can be calculated on the first data point\n}\n    } \nif (msg.payload.sensor_team === \"team_2\") {\n           current_velocityTeam2 = msg.payload.data.speed;\n           \n        if (previous_velocityTeam2 !== null && previous_timestampTeam2 !== null) {\n\n            var velocity = current_velocityTeam2 - previous_velocityTeam2;\n            var time = current_timestamp - previous_timestampTeam2;\n            \n            // Check if delta_t is not zero to avoid division by zero\n            if (time !== 0) {\n                // Calculate acceleration\n                accelerationTeam2 = velocity / time;\n                context.set('accelerationTeam2', accelerationTeam2);\n                context.set('previous_velocityTeam2', current_velocityTeam2);\n                context.set('previous_timestamp', current_timestamp);\n                \n                \n            } else {\n                return null; // Ignore the message if delta_t is zero\n            }\n        } else {\n            // Initialize context variables if they are not set\n            context.set('previous_velocityTeam2', current_velocityTeam2);\n            context.set('previous_timestampTeam2', current_timestamp);\n            return null; // No acceleration can be calculated on the first data point\n        }\n    } \nif (msg.payload.sensor_team === \"team_3\") {\n        current_velocityTeam3 = msg.payload.data.speed;\n\n        if (previous_velocityTeam3 !== null && previous_timestampTeam3 !== null) {\n\n            var velocity = current_velocityTeam3 - previous_velocityTeam3;\n            var time = current_timestamp - previous_timestampTeam3;\n\n            // Check if delta_t is not zero to avoid division by zero\n            if (time !== 0) {\n                // Calculate acceleration\n                accelerationTeam3 = velocity / time;\n                context.set('accelerationTeam3', accelerationTeam3);\n                context.set('previous_velocityTeam3', current_velocityTeam3);\n                context.set('previous_timestampTeam3', current_timestamp);\n            } else {\n                return null; // Ignore the message if delta_t is zero\n            }\n        } else {\n            // Initialize context variables if they are not set\n            context.set('previous_velocityTeam3', current_velocityTeam3);\n            context.set('previous_timestampTeam3', current_timestamp);\n            return null; // No acceleration can be calculated on the first data point\n        }\n    }\n    if(teamId === \"team_1\"){\n        var acceleration = accelerationTeam1;\n        msg.payload = acceleration;\n    }else if(teamId === \"team_2\"){\n        var acceleration = accelerationTeam2;\n        msg.payload = acceleration;\n    }else if(teamId === \"team_3\"){\n        var acceleration = accelerationTeam3;\n        msg.payload = acceleration;\n        \n    }else {\n        \n        let acceleration = (accelerationTeam1 + accelerationTeam2 + accelerationTeam3)/3;\n        msg.payload = acceleration;\n    }\n    return msg;\n}",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1460,
-        "y": 880,
-        "wires": [
-            [
-                "7eae52cad0acfe6f"
-            ]
-        ]
-    },
-    {
-        "id": "70bca6f9202728a6",
-        "type": "ui_gauge",
-        "z": "bd9b790564293dee",
-        "name": "",
-        "group": "f1b38f565b516e15",
-        "order": 5,
-        "width": 8,
-        "height": 6,
-        "gtype": "gage",
-        "title": "heart_rate",
-        "label": "bpm",
-        "format": "{{value}}",
-        "min": 0,
-        "max": "200",
-        "colors": [
-            "#00b500",
-            "#e6e600",
-            "#ca3838"
-        ],
-        "seg1": "80",
-        "seg2": "120",
-        "diff": false,
-        "className": "",
-        "x": 2190,
-        "y": 300,
-        "wires": []
-    },
-    {
-        "id": "dc02d7182dc7e9f5",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "extract heart rate",
-        "func": "\nconst heart_rate = msg.payload.heart_rate;\nmsg.payload = heart_rate;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1770,
-        "y": 300,
-        "wires": [
-            [
-                "70bca6f9202728a6"
-            ]
-        ]
-    },
-    {
-        "id": "bdc7b9101b33f80a",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 6,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Status heart rate",
-        "format": "{{msg.payload.status}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1740,
-        "y": 240,
-        "wires": []
-    },
-    {
-        "id": "2a0ceef6d442272c",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "extract body temperature",
-        "func": "const body_temperature = msg.payload.body_temperature;\nmsg.payload = body_temperature;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1830,
-        "y": 480,
-        "wires": [
-            [
-                "5ba02e3b7025983e"
-            ]
-        ]
-    },
-    {
-        "id": "5ba02e3b7025983e",
-        "type": "ui_gauge",
-        "z": "bd9b790564293dee",
-        "name": "",
-        "group": "f1b38f565b516e15",
-        "order": 12,
-        "width": 8,
-        "height": 6,
-        "gtype": "gage",
-        "title": "body_temperature",
-        "label": "°C",
-        "format": "{{value}}",
-        "min": "34",
-        "max": "45",
-        "colors": [
-            "#00b500",
-            "#e6e600",
-            "#ca3838"
-        ],
-        "seg1": "38",
-        "seg2": "42",
-        "diff": false,
-        "className": "",
-        "x": 2190,
-        "y": 480,
-        "wires": []
-    },
-    {
-        "id": "886e2094b9e13c5b",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 13,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Status body temperature",
-        "format": "{{msg.payload.status}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1810,
-        "y": 420,
-        "wires": []
-    },
-    {
-        "id": "3431e4157869be03",
-        "type": "ui_worldmap",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 4,
-        "width": 8,
-        "height": 8,
-        "name": "Position Hot Path",
-        "lat": "",
-        "lon": "",
-        "zoom": "7",
-        "layer": "OSMG",
-        "cluster": "",
-        "maxage": "",
-        "usermenu": "hide",
-        "layers": "hide",
-        "panit": "false",
-        "panlock": "false",
-        "zoomlock": "false",
-        "hiderightclick": "true",
-        "coords": "none",
-        "showgrid": "false",
-        "showruler": "false",
-        "allowFileDrop": "false",
-        "path": "/worldmap",
-        "overlist": "DR,CO,RA,DN,HM",
-        "maplist": "OSMG,OSMC,EsriC,EsriS,EsriT,EsriDG,UKOS",
-        "mapname": "",
-        "mapurl": "",
-        "mapopt": "",
-        "mapwms": false,
-        "x": 2050,
-        "y": 640,
-        "wires": []
-    },
-    {
-        "id": "859df2cbcb2035e0",
-        "type": "ui_gauge",
-        "z": "bd9b790564293dee",
-        "name": "",
-        "group": "f1b38f565b516e15",
-        "order": 20,
-        "width": 8,
-        "height": 6,
-        "gtype": "gage",
-        "title": "speed",
-        "label": "km/h",
-        "format": "{{value}}",
-        "min": 0,
-        "max": "20",
-        "colors": [
-            "#00b500",
-            "#e6e600",
-            "#ca3838"
-        ],
-        "seg1": "",
-        "seg2": "",
-        "diff": false,
-        "className": "",
-        "x": 1990,
-        "y": 800,
-        "wires": []
-    },
-    {
-        "id": "6d08d7964ae6d04f",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "extract speed",
-        "func": "\nconst speed = msg.payload.speed;\nmsg.payload = speed;\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1780,
-        "y": 800,
-        "wires": [
-            [
-                "859df2cbcb2035e0"
-            ]
-        ]
-    },
-    {
-        "id": "84de1f08d8e0cc61",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 21,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Activity status",
-        "format": "{{msg.payload.activity}} ",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1780,
-        "y": 740,
-        "wires": []
-    },
-    {
-        "id": "37a710e6f7d16abd",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 7,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Average current heartbeat rate: ",
-        "format": "{{msg.payload.average}} bpm",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1790,
-        "y": 200,
-        "wires": []
-    },
-    {
-        "id": "c39de9d06d045425",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 14,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Average current body temperature:",
-        "format": "{{msg.payload.average}} °C",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1880,
-        "y": 360,
-        "wires": []
-    },
-    {
-        "id": "09cde273084bf179",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 23,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Average current pace",
-        "format": "{{msg.payload.averageSpeed}} km/h",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1800,
-        "y": 680,
-        "wires": []
-    },
-    {
-        "id": "7eae52cad0acfe6f",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 25,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Acceleration",
-        "format": "{{msg.payload}} m/s^2",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1730,
-        "y": 880,
-        "wires": []
-    },
-    {
-        "id": "c0335031b12adae7",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "detect heart anomaly",
-        "func": "var average = msg.payload.average;  \nvar activitySpeed = flow.get(\"dataSpeed\").activity;  \nlet statusAnomaly;\n\nif(average >= 120 && activitySpeed === \"walking\"){\n    statusAnomaly = \"Heart anomaly detected\";\n}else if(average <= 40 && activitySpeed === \"walking\"){\n    statusAnomaly = \"Heart anomaly detected\";\n}else{\n    statusAnomaly = \"no Anomalies detected\";\n}\n\n\nmsg.payload = statusAnomaly;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1760,
-        "y": 140,
-        "wires": [
-            [
-                "16c20da8ee7f415d"
-            ]
-        ]
-    },
-    {
-        "id": "934dfdd7da3b854a",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 15,
-        "width": 8,
-        "height": 1,
-        "name": "",
-        "label": "Distance travelled",
-        "format": "{{msg.payload}} km",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 1790,
-        "y": 540,
-        "wires": []
-    },
-    {
-        "id": "16c20da8ee7f415d",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 8,
-        "width": 9,
-        "height": 1,
-        "name": "",
-        "label": "Status Anomaly",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 2140,
-        "y": 140,
-        "wires": []
-    },
-    {
-        "id": "3278b7b39eeec438",
-        "type": "ui_dropdown",
-        "z": "bd9b790564293dee",
-        "name": "",
-        "label": "",
-        "tooltip": "",
-        "place": "Select team",
-        "group": "f1b38f565b516e15",
-        "order": 1,
-        "width": 8,
-        "height": 1,
-        "passthru": true,
-        "multiple": false,
-        "options": [
-            {
-                "label": "All teams",
-                "value": "all",
-                "type": "str"
-            },
-            {
-                "label": "Team 1",
-                "value": "team_1",
-                "type": "str"
-            },
-            {
-                "label": " Team 2",
-                "value": "team_2",
-                "type": "str"
-            },
-            {
-                "label": " Team 3",
-                "value": "team_3",
-                "type": "str"
-            }
-        ],
-        "payload": "",
-        "topic": "payload",
-        "topicType": "msg",
-        "className": "",
-        "x": 182,
-        "y": 562,
-        "wires": [
-            [
-                "7d3e16f5fff090a6"
-            ]
-        ]
-    },
-    {
-        "id": "7d3e16f5fff090a6",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "function 8",
-        "func": "\nvar teamId = msg.payload;\nglobal.set(\"selectedTeam\", teamId);\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 202,
-        "y": 642,
-        "wires": [
-            [
-                "0c5fba2e5fb27888"
-            ]
-        ]
-    },
-    {
-        "id": "0c5fba2e5fb27888",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "function 9",
-        "func": "\n\nvar teamId = global.get(\"selectedTeam\");\nif(teamId === 1){\n    msg.payload = \"Team 1\";\n}else if(teamId === 2){\n    msg.payload = \"Team 2\";\n}else if(teamId === 3){\n    msg.payload = \"Team 3\";\n}\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 202,
-        "y": 702,
-        "wires": [
-            [
-                "b0b0ce3f0f4aef64"
-            ]
-        ]
-    },
-    {
-        "id": "b0b0ce3f0f4aef64",
-        "type": "ui_text",
-        "z": "bd9b790564293dee",
-        "group": "f1b38f565b516e15",
-        "order": 2,
-        "width": 4,
-        "height": 1,
-        "name": "",
-        "label": "Team",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
-        "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 212,
-        "y": 782,
-        "wires": []
-    },
-    {
-        "id": "66adfc94d5585d31",
-        "type": "function",
-        "z": "bd9b790564293dee",
-        "name": "Calculate Distance",
-        "func": "var teamId = global.get(\"selectedTeam\");\n\n\nvar totalDistanceTeam1 = context.get('totalDistanceTeam1') || 0;\nlet latArrayTeam1 = context.get('previous_latArrayTeam1') || [];\nlet lonArrayTeam1 = context.get('previous_lonArrayTeam1') || [];\nvar totalDistanceTeam2 = context.get('totalDistanceTeam2') || 0;\nlet latArrayTeam2 = context.get('previous_latArrayTeam2') || [];\nlet lonArrayTeam2 = context.get('previous_lonArrayTeam2') || [];\nvar totalDistanceTeam3 = context.get('totalDistanceTeam3') || 0;\nlet latArrayTeam3 = context.get('previous_latArrayTeam3') || [];\nlet lonArrayTeam3 = context.get('previous_lonArrayTeam3') || [];\n\n\n\n\n\n\nif(msg.payload.sensor_type === \"position\"){\n    if(msg.payload.sensor_team === \"team_1\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam1.push(latitude);\n          if(latArrayTeam1.length > 2){\n             latArrayTeam1.shift();\n           }\n          lonArrayTeam1.push(longitude);\n          if(lonArrayTeam1.length > 2){\n             lonArrayTeam1.shift();\n}\n\n        if(latArrayTeam1.length == 2){\n           //for (var i = 1; i < latArrayTeam1.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam1[0], lonArrayTeam1[0], latArrayTeam1[1], lonArrayTeam1[1]);\n    totalDistanceTeam1 += distanceCalc;\n//}\n}\ncontext.set('totalDistance', totalDistanceTeam1);\ncontext.set('totalDistanceTeam1', totalDistanceTeam1);\n\n//totalDistanceTeam1 = totalDistanceTeam1 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam1', latArrayTeam1);\ncontext.set('previous_lonArrayTeam1', lonArrayTeam1);\n\n//msg.payload = {totalD: totalDistanceTeam1.toFixed(4) + \"km\",\n//            type : msg.payload.sensor_type}; // Format the payload as a string with two decimal places\n\n//        return msg;\n}\n    if (msg.payload.sensor_team === \"team_2\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam2.push(latitude);\n          if(latArrayTeam2.length > 2){\n             latArrayTeam2.shift();\n           }\n          lonArrayTeam2.push(longitude);\n          if(lonArrayTeam2.length > 2){\n             lonArrayTeam2.shift();\n}\n\n        if(latArrayTeam2.length == 2){\n           for (var i = 1; i < latArrayTeam2.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam2[0], lonArrayTeam2[0], latArrayTeam2[1], lonArrayTeam2[1]);\n    totalDistanceTeam2 += distanceCalc;\n}\n}\ncontext.set('totalDistance', totalDistanceTeam1);\ncontext.set('totalDistanceTeam2', totalDistanceTeam2);\n\n//totalDistanceTeam2 = totalDistanceTeam2 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam2', latArrayTeam2);\ncontext.set('previous_lonArrayTeam2', lonArrayTeam2);\n\n\n    }\n    if (msg.payload.sensor_team === \"team_3\"){\n        const { latitude, longitude, altitude } = msg.payload.data;\n        latArrayTeam3.push(latitude);\n          if(latArrayTeam3.length > 2){\n             latArrayTeam3.shift();\n           }\n          lonArrayTeam3.push(longitude);\n          if(lonArrayTeam3.length > 2){\n             lonArrayTeam3.shift();\n}\n\n        if(latArrayTeam3.length == 2){\n           for (var i = 1; i < latArrayTeam3.length; i++) {\n    \n    var distanceCalc = haversineDistance(latArrayTeam3[0], lonArrayTeam3[0], latArrayTeam3[1], lonArrayTeam3[1]);\n    totalDistanceTeam3 += distanceCalc;\n}\n}\ncontext.set('totalDistance', totalDistanceTeam3);\ncontext.set('totalDistanceTeam3', totalDistanceTeam3);\n\n//totalDistanceTeam3 = totalDistanceTeam3 / 1000; // Convert to kilometers\ncontext.set('previous_latArrayTeam3', latArrayTeam3);\ncontext.set('previous_lonArrayTeam3', lonArrayTeam3);\n\n    }\n    function haversineDistance(lat1, lon1, lat2, lon2) {\n        var R = 6371000; // Radius of the Earth in meters\n        var phi1 = toRadians(lat1);\n        var phi2 = toRadians(lat2);\n        var deltaPhi = toRadians(lat2 - lat1);\n        var deltaLambda = toRadians(lon2 - lon1);\n\n        var a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +\n            Math.cos(phi1) * Math.cos(phi2) *\n            Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);\n        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));\n\n        var distance = R * c;\n        return distance;\n    }\n\n    function toRadians(degrees) {\n        return degrees * Math.PI / 180;\n    }\n\n\n\n    \n\n    if (teamId === \"team_1\"){\n         msg.payload = (totalDistanceTeam1 / 1000).toFixed(2);\n\n    }else if(teamId === \"team_2\"){\n        msg.payload = (totalDistanceTeam2 / 1000).toFixed(2);\n    }else if(teamId === \"team_3\"){\n        msg.payload = (totalDistanceTeam3 / 1000).toFixed(2);\n    }else if(teamId === \"all\"){\n        msg.payload = ((totalDistanceTeam1 + totalDistanceTeam2 + totalDistanceTeam3)/1000).toFixed(2);\n    }\n    return msg;\n}\n",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1450,
-        "y": 500,
-        "wires": [
-            [
-                "934dfdd7da3b854a"
-            ]
-        ]
-    },
-    {
-        "id": "ad3794bf5408c57b",
-        "type": "debug",
-        "z": "bd9b790564293dee",
-        "name": "debug 2",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 2040,
-        "y": 580,
-        "wires": []
-    },
-    {
-        "id": "5ff8986c7f44be82",
+        "id": "5357209055f6bfd4",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
-        "order": 3,
-        "width": 5,
-        "height": 1
-    },
-    {
-        "id": "ec4fb934b1df2052",
-        "type": "ui_spacer",
-        "z": "bd9b790564293dee",
-        "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 9,
         "width": 9,
         "height": 1
     },
     {
-        "id": "76ae0ca34d20ce0c",
+        "id": "e9e9bc102dbff481",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 10,
         "width": 9,
         "height": 1
     },
     {
-        "id": "5ea6b224ee0dc79d",
+        "id": "0bfcc71d2eac4542",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 11,
         "width": 9,
         "height": 1
     },
     {
-        "id": "541450850e88ce7d",
+        "id": "39e07f59fb7cf914",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 16,
         "width": 17,
         "height": 1
     },
     {
-        "id": "e8de7c2215ef1bf6",
+        "id": "3ad2577675c3ffb2",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 17,
         "width": 17,
         "height": 1
     },
     {
-        "id": "3fc5b7771e049f88",
+        "id": "aef63140ceff4f44",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 18,
         "width": 17,
         "height": 1
     },
     {
-        "id": "7d6749051bbe3dd7",
+        "id": "2ada502bb330fe56",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 19,
         "width": 17,
         "height": 1
     },
     {
-        "id": "a8d3cab090fe5e9d",
+        "id": "81f194477af4301d",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 22,
         "width": 8,
         "height": 1
     },
     {
-        "id": "aa6c465399961daf",
+        "id": "0592af5b1843cc9f",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 24,
         "width": 8,
         "height": 1
     },
     {
-        "id": "01f9f48f83996efe",
+        "id": "6405ea5705f84e82",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 26,
         "width": 8,
         "height": 1
     },
     {
-        "id": "bb9f03cafd9010b4",
+        "id": "fbb6368c3c629bdc",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 27,
         "width": 17,
         "height": 1
     },
     {
-        "id": "4c07d69fb9b914d5",
+        "id": "284d366d1cc246b2",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 28,
         "width": 17,
         "height": 1
     },
     {
-        "id": "355ce84229603e8e",
+        "id": "f6ae84542ccfc99c",
         "type": "ui_spacer",
-        "z": "bd9b790564293dee",
+        "z": "149c3bc769e9c702",
         "name": "spacer",
-        "group": "f1b38f565b516e15",
+        "group": "0c220355ed5d450a",
         "order": 29,
         "width": 17,
         "height": 1
     },
     {
-        "id": "7b778c48129e069b",
-        "type": "ui_group",
-        "name": "Cold Path",
-        "tab": "c67b592948628c69",
-        "order": 2,
-        "disp": true,
-        "width": 17,
-        "collapse": false,
-        "className": ""
-    },
-    {
         "id": "37464be6e8cb6157",
         "type": "mqtt-broker",
-        "name": "",
+        "name": "project",
         "broker": "localhost",
-        "port": "1883",
+        "port": "",
         "clientid": "",
         "autoConnect": true,
         "usetls": false,
@@ -1856,29 +1870,40 @@
         "sessionExpiry": ""
     },
     {
-        "id": "f1b38f565b516e15",
+        "id": "0c220355ed5d450a",
         "type": "ui_group",
-        "name": "Hot Path",
-        "tab": "b5f35d161ca6e5f0",
+        "name": "Sensors",
+        "tab": "e7bcb01c9e0da795",
         "order": 1,
         "disp": true,
-        "width": "25",
+        "width": 25,
         "collapse": false,
         "className": ""
     },
     {
-        "id": "c67b592948628c69",
+        "id": "7b778c48129e069b",
+        "type": "ui_group",
+        "name": "Cold Path",
+        "tab": "c67b592948628c69",
+        "order": 2,
+        "disp": true,
+        "width": 17,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "e7bcb01c9e0da795",
         "type": "ui_tab",
-        "name": "Cold Path Dashboard",
+        "name": "Output",
         "icon": "dashboard",
         "order": 2,
         "disabled": false,
         "hidden": false
     },
     {
-        "id": "b5f35d161ca6e5f0",
+        "id": "c67b592948628c69",
         "type": "ui_tab",
-        "name": "Hot Path Dashboard",
+        "name": "Cold Path Dashboard",
         "icon": "dashboard",
         "order": 2,
         "disabled": false,
